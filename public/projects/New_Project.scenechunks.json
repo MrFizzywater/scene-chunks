@@ -1,0 +1,61 @@
+{
+  "project": {
+    "id": "proj_h74o4",
+    "title": "New Project",
+    "settings": {
+      "activeScriptId": "script_main",
+      "activeSkinId": "DEFAULT"
+    },
+    "chunks": [
+      "chunk_p8cx27"
+    ],
+    "scripts": [
+      "script_main"
+    ],
+    "meta": {
+      "draft": "Draft #1"
+    }
+  },
+  "chunksById": {
+    "chunk_p8cx27": {
+      "id": "chunk_p8cx27",
+      "title": "INT. LOCATION - DAY",
+      "body": [
+        {
+          "type": "action",
+          "text": "",
+          "id": "blk_mhmb20ih_11"
+        }
+      ],
+      "characters": [],
+      "props": [],
+      "emotionalBeat": "",
+      "status": "draft",
+      "tags": [],
+      "estPageLength": 0,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false,
+      "slug": {
+        "intExt": "INT.",
+        "location": "LOCATION",
+        "timeOfDay": "DAY"
+      }
+    }
+  },
+  "scriptsById": {
+    "script_main": {
+      "id": "script_main",
+      "name": "Main Draft",
+      "chunkOrder": [
+        "chunk_p8cx27"
+      ],
+      "structureTemplate": null,
+      "anchors": []
+    }
+  },
+  "selectedChunkId": "chunk_p8cx27",
+  "deletedScenes": [],
+  "version": "scene-chunks-v1",
+  "savedAt": "2025-11-05T18:08:47.859Z"
+}

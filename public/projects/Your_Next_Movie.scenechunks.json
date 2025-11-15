@@ -1,0 +1,63 @@
+{
+  "project": {
+    "id": "proj_yqrsz",
+    "title": "Your Next Movie",
+    "settings": {
+      "activeScriptId": "script_main",
+      "activeSkinId": "DEFAULT"
+    },
+    "chunks": [
+      "chunk_lnckm0"
+    ],
+    "scripts": [
+      "script_main"
+    ],
+    "meta": {
+      "author": "Your Name",
+      "draft": "Draft #1",
+      "contact": "name@email.com"
+    }
+  },
+  "chunksById": {
+    "chunk_lnckm0": {
+      "id": "chunk_lnckm0",
+      "title": "EST. MAJESTIC MOUNTAINSIDE - MORNING",
+      "body": [
+        {
+          "type": "action",
+          "text": "The sun rises on your new film...",
+          "id": "blk_mhnuhb7b_a"
+        }
+      ],
+      "characters": [],
+      "props": [],
+      "emotionalBeat": "",
+      "status": "draft",
+      "tags": [],
+      "estPageLength": 0.1,
+      "notes": "",
+      "anchorRole": "opening-image",
+      "locked": false,
+      "slug": {
+        "intExt": "EST.",
+        "location": "MAJESTIC MOUNTAINSIDE",
+        "timeOfDay": "MORNING"
+      }
+    }
+  },
+  "scriptsById": {
+    "script_main": {
+      "id": "script_main",
+      "name": "Main Draft",
+      "chunkOrder": [
+        "chunk_lnckm0"
+      ],
+      "structureTemplate": null,
+      "anchors": []
+    }
+  },
+  "selectedChunkId": "chunk_lnckm0",
+  "deletedScenes": [],
+  "version": "scene-chunks-v1",
+  "savedAt": "2025-11-06T19:55:56.016Z"
+}
