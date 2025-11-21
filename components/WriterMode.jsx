@@ -132,7 +132,13 @@ export default function WriterMode() {
   const registerRef = (sceneId, index, part = "main") => (el) => {
     if (!inputRefs.current[sceneId]) inputRefs.current[sceneId] = {};
     inputRefs.current[sceneId][`${index}:${part}`] = el;
+
+    // 🔥 auto-resize any textarea as soon as it mounts / updates
+    if (el && el.tagName === "TEXTAREA") {
+      autoResize(el);
+    }
   };
+
 
   const focusLine = (sceneId, index, part = "main") => {
     const el = inputRefs.current?.[sceneId]?.[`${index}:${part}`];
@@ -651,6 +657,162 @@ export default function WriterMode() {
                       </div>
                     );
                   }
+
+                  // DUAL DIALOGUE
+                  if (block?.type === "dualDialogue") {
+                    const left = block.left || {};
+                    const right = block.right || {};
+
+                    const updateSide = (side, key, value) => {
+                      const body = [...scene.body];
+                      const updatedSide = { ...(side === "left" ? left : right), [key]: value };
+                      body[bIdx] = {
+                        ...block,
+                        [side]: updatedSide,
+                      };
+                      updateSceneBody(scene.id, body);
+                    };
+
+                    return (
+                      <div
+                        key={block.id || bIdx}
+                        style={{
+                          display: "flex",
+                          gap: "32px",
+                          padding: "8px 0",
+                          marginBottom: "12px",
+                          background: "rgba(255, 247, 243, 0.15)",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {/* LEFT SIDE */}
+                        <div style={{ flex: 1 }}>
+                          {/* character */}
+                          <input
+                            ref={registerRef(scene.id, bIdx, "leftChar")}
+                            data-part="leftChar"
+                            value={left.character || ""}
+                            onChange={(e) =>
+                              updateSide("left", "character", e.target.value.toUpperCase())
+                            }
+                            onKeyDown={(e) => handleLineKeyDown(e, scene, block, bIdx)}
+                            style={{
+                              ...rowBase,
+                              textTransform: "uppercase",
+                              fontWeight: 600,
+                              width: "90%",
+                              marginLeft: "10%",
+                              marginBottom: "2px",
+                            }}
+                            placeholder="CHARACTER"
+                          />
+
+                          {/* parenthetical */}
+                          {!!left.parenthetical && (
+                            <textarea
+                              ref={registerRef(scene.id, bIdx, "leftParen")}
+                              data-part="leftParen"
+                              value={left.parenthetical}
+                              onChange={(e) =>
+                                updateSide("left", "parenthetical", e.target.value)
+                              }
+                              onInput={(e) => autoResize(e.target)}
+                              onKeyDown={(e) => handleLineKeyDown(e, scene, block, bIdx)}
+                              style={{
+                                ...rowBase,
+                                width: "70%",
+                                marginLeft: "15%",
+                                fontStyle: "italic",
+                                marginBottom: "2px",
+                              }}
+                              placeholder="parenthetical"
+                            />
+                          )}
+
+                          {/* dialogue */}
+                          <textarea
+                            ref={registerRef(scene.id, bIdx, "leftDialogue")}
+                            data-part="leftDialogue"
+                            value={left.dialogue || ""}
+                            onChange={(e) => updateSide("left", "dialogue", e.target.value)}
+                            onInput={(e) => autoResize(e.target)}
+                            onKeyDown={(e) => handleLineKeyDown(e, scene, block, bIdx)}
+                            style={{
+                              ...rowBase,
+                              width: "80%",
+                              marginLeft: "10%",
+                              whiteSpace: "pre-wrap",
+                            }}
+                            placeholder="Dialogue..."
+                          />
+                        </div>
+
+                        {/* RIGHT SIDE */}
+                        <div style={{ flex: 1 }}>
+                          {/* character */}
+                          <input
+                            ref={registerRef(scene.id, bIdx, "rightChar")}
+                            data-part="rightChar"
+                            value={right.character || ""}
+                            onChange={(e) =>
+                              updateSide("right", "character", e.target.value.toUpperCase())
+                            }
+                            onKeyDown={(e) => handleLineKeyDown(e, scene, block, bIdx)}
+                            style={{
+                              ...rowBase,
+                              textTransform: "uppercase",
+                              fontWeight: 600,
+                              width: "90%",
+                              marginLeft: "0%",
+                              marginBottom: "2px",
+                            }}
+                            placeholder="CHARACTER"
+                          />
+
+                          {/* parenthetical */}
+                          {!!right.parenthetical && (
+                            <textarea
+                              ref={registerRef(scene.id, bIdx, "rightParen")}
+                              data-part="rightParen"
+                              value={right.parenthetical}
+                              onChange={(e) =>
+                                updateSide("right", "parenthetical", e.target.value)
+                              }
+                              onInput={(e) => autoResize(e.target)}
+                              onKeyDown={(e) => handleLineKeyDown(e, scene, block, bIdx)}
+                              style={{
+                                ...rowBase,
+                                width: "70%",
+                                marginLeft: "5%",
+                                fontStyle: "italic",
+                                marginBottom: "2px",
+                              }}
+                              placeholder="parenthetical"
+                            />
+                          )}
+
+                          {/* dialogue */}
+                          <textarea
+                            ref={registerRef(scene.id, bIdx, "rightDialogue")}
+                            data-part="rightDialogue"
+                            value={right.dialogue || ""}
+                            onChange={(e) => updateSide("right", "dialogue", e.target.value)}
+                            onInput={(e) => autoResize(e.target)}
+                            onKeyDown={(e) => handleLineKeyDown(e, scene, block, bIdx)}
+                            style={{
+                              ...rowBase,
+                              width: "80%",
+                              marginLeft: "5%",
+                              whiteSpace: "pre-wrap",
+                            }}
+                            placeholder="Dialogue..."
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
+
 
                   // transition
                   if (block?.type === "transition") {

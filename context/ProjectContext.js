@@ -9,131 +9,79 @@ import React, {
   useEffect,
 } from "react";
 
-
-
 // ------------------------------------------------------------------
-// Helper to generate new unique chunk IDs
-// ------------------------------------------------------------------
-const makeId = (prefix = "chunk") =>
-  prefix + "_" + Math.random().toString(36).slice(2, 8);
-
-// ------------------------------------------------------------------
-// DUMMY INITIAL DATA
+// DUMMY INITIAL DATA — WELCOME PROJECT
 // ------------------------------------------------------------------
 const initialProject = {
-  id: "proj_123",
-  title: "Cursed Record Store",
-  logline: "Two brothers open a haunted record shop in a small town.",
+  id: "proj_demo",
+  title: "Welcome to Scene Chunks!",
+  logline: "A quick tour of the interface.",
   settings: {
     activeScriptId: "script_main",
     activeSkinId: "DEFAULT",
   },
-  // 👇 title-page / script meta lives here
   meta: {
-    author: "Nate LaCroix",
+    author: "",
     email: "",
     company: "",
-    draftDate: new Date().toISOString().slice(0, 10), // yyyy-mm-dd
+    draftDate: "2025-11-21",
   },
-  chunks: ["chunk_a", "chunk_b", "chunk_c"],
+  chunks: ["chunk_welcome"],
   scripts: ["script_main"],
 };
 
 const initialChunksById = {
-  chunk_a: {
-    id: "chunk_a",
-    title: "INT. GARAGE - NIGHT",
+  chunk_welcome: {
+    id: "chunk_welcome",
+    title: "INT. SCENE CHUNKS - DAY",
     body: [
       {
         type: "action",
-        text: "Greasy tools everywhere. A busted mannequin slumps in the corner.",
+        text: `Welcome! This is a sample scene chunk.
+        
+Scene Chunks lets you build your screenplay as modular pieces (“chunks”). 
+Each chunk contains action, dialogue, transitions, and tags you can rearrange at any time.`,
+        id: "blk_mi9gffxj_1",
       },
       {
-        type: "dialogueBlock",
-        character: "TYLER",
-        parenthetical: "",
-        dialogue: "Look, I'm just saying the mannequin definitely moved.",
-      },
-      {
-        type: "dialogueBlock",
-        character: "HAYDEN",
-        parenthetical: "",
-        dialogue: "Dude. Don't start that again.",
-      },
-    ],
-    characters: ["TYLER", "HAYDEN"],
-    props: ["flashlight", "box of vinyl", "creepy mannequin"],
-    emotionalBeat: "Tyler is trying to warn Hayden, Hayden isn't listening.",
-    status: "draft",
-    tags: ["Act1"],
-    estPageLength: 1.2,
-    notes: "Establish brothers' vibe here.",
-    anchorRole: null,
-    locked: false,
-  },
-
-  chunk_b: {
-    id: "chunk_b",
-    title: "EXT. SMALL POND RECORDS - DAY",
-    body: [
-      {
-        type: "action",
-        text: "The 'For Lease' sign comes down. The vibe is hopeful and cursed at the same time.",
-      },
-      {
-        type: "dialogueBlock",
-        character: "TYLER",
-        parenthetical: "",
-        dialogue: "We actually did this. It's real.",
-      },
-      {
-        type: "dialogueBlock",
-        character: "HAYDEN",
-        parenthetical: "(quietly)",
-        dialogue: "If something starts whispering buy me in Latin, I'm out.",
-      },
-    ],
-    characters: ["TYLER", "HAYDEN"],
-    props: ["keys", "lease papers", "For Lease sign"],
-    emotionalBeat: "They commit to the store.",
-    status: "draft",
-    tags: ["Act1", "Setup"],
-    estPageLength: 0.8,
-    notes: "Location intro.",
-    anchorRole: "inciting-incident",
-    locked: true, // because it’s pegged to a beat
-  },
-
-  chunk_c: {
-    id: "chunk_c",
-    title: "INT. RECORD STORE - NIGHT",
-    body: [
-      {
-        type: "action",
-        text: "Lights flicker. A record spins on its own. Air tastes old.",
-      },
-      {
-        type: "dialogueBlock",
-        character: "VOICE (O.S.)",
-        parenthetical: "",
-        dialogue: "Play track four.",
+        id: "blk_mi9gffxj_2",
+        type: "dualDialogue",
+        left: {
+          character: "GIRL",
+          parenthetical: "",
+          dialogue:
+            "• The sidebar lists all your scenes  \n \n• The bottom bar shows your script structure  \n\n• The Writer button will remove distractions and let you get in the zone",
+        },
+        right: {
+          character: "BOY",
+          parenthetical: "",
+          dialogue:
+            "\n• The editor shows the selected scene \n\n• Panels on the side handle Characters, Props, & Crew\n\n• And when you're ready to see your masterpiece, click the Preview Button. ",
+        },
+        status: "draft",
       },
       {
         type: "action",
-        text: "The needle drops. The record begins to hiss.",
+        text: "👉 When you're ready, delete this chunk or click **BLANK PROJECT** to start fresh.",
+        id: "blk_mi9gffxj_3",
       },
       {
-        type: "transition",
-        text: "CUT TO:",
+        id: "blk_mi9gi4y8_4",
+        type: "dialogueBlock",
+        character: "Narrator V/O",
+        parenthetical: "",
+        dialogue:
+          "This demo chunk exists only to show the interface. Feel free to delete it.",
+        status: "draft",
       },
     ],
-    characters: ["TYLER"],
-    props: ["mysterious vinyl", "old turntable"],
-    emotionalBeat: "First supernatural contact.",
-    status: "draft",
-    tags: ["Act1", "Spooky"],
-    estPageLength: 1.5,
-    notes: "Horror hook.",
+    characters: [],
+    props: ["BLANK PROJECT"],
+    emotionalBeat: "",
+    status: "info",
+    tags: ["Welcome"],
+    estPageLength: 0.3,
+    notes: "",
     anchorRole: null,
     locked: false,
   },
@@ -143,11 +91,21 @@ const initialScriptsById = {
   script_main: {
     id: "script_main",
     name: "Main Draft",
-    chunkOrder: ["chunk_a", "chunk_b", "chunk_c"],
+    chunkOrder: ["chunk_welcome"],
     structureTemplate: null,
     anchors: [],
   },
 };
+
+
+
+// ------------------------------------------------------------------
+// Helper to generate new unique chunk IDs
+// ------------------------------------------------------------------
+const makeId = (prefix = "chunk") =>
+  prefix + "_" + Math.random().toString(36).slice(2, 8);
+
+
 
 
 
@@ -166,7 +124,7 @@ export function ProjectProvider({ children }) {
   const [project, setProject] = useState(initialProject);
   const [chunksById, setChunksById] = useState(initialChunksById);
   const [scriptsById, setScriptsById] = useState(initialScriptsById);
-  const [selectedChunkId, setSelectedChunkId] = useState("chunk_a");
+  const [selectedChunkId, setSelectedChunkId] = useState("chunk_welcome");
   const [saveStatus, setSaveStatus] = useState("saved");
   const [deletedScenes, setDeletedScenes] = useState([]); // 🗑
 
@@ -201,7 +159,7 @@ useEffect(() => {
   }
 
   // 2) otherwise fall back to your default JSON
-  fetch("./projects/Your_Next_Movie.scenechunks.json")
+  fetch("./projects/Welcome_to_Scene_Chunks_.scenechunks.json")
     .then((res) => res.json())
     .then((data) => {
       if (data.project) setProject(data.project);
@@ -1139,18 +1097,14 @@ const [importWizardOpen, setImportWizardOpen] = useState(false);
 const [importWizardText, setImportWizardText] = useState("");
 
 const loadDemoProject = React.useCallback(() => {
-  // you can reuse your original initialProject / initialChunksById
   const demoId = "demo_" + Math.random().toString(36).slice(2, 5);
-  setProject((prev) => ({
-    ...prev,
-    id: demoId,
-    title: "Demo: Cursed Record Store",
-  }));
-  setChunksById((_) => ({ ...initialChunksById }));
-  setScriptsById((_) => ({ ...initialScriptsById }));
-  setSelectedChunkId("chunk_a");
+  setProject({ ...initialProject, id: demoId });
+  setChunksById({ ...initialChunksById });
+  setScriptsById({ ...initialScriptsById });
+  setSelectedChunkId("chunk_welcome");
   return demoId;
 }, []);
+
 
 const loadTutorialProject = React.useCallback(() => {
   // for now just reuse demo
