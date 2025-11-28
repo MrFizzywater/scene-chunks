@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useProject } from "../context/ProjectContext";
-
-// ⬇️ add this import (adjust path if yours is different)
 import CharacterPanel from "./CharacterPanel";
 
 import {
@@ -22,6 +20,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+/* ---------------------------------------------------
+   HELPERS
+--------------------------------------------------- */
 function normalizeCharName(name) {
   if (typeof name !== "string") return "";
   return name.replace(/\s*\([^)]*\)\s*$/i, "").trim();
@@ -30,16 +31,12 @@ function normalizeCharName(name) {
 function getSceneCharactersFromChunk(chunk) {
   if (!chunk) return [];
   const set = new Set();
-
-  // explicit
   if (Array.isArray(chunk.characters)) {
     chunk.characters.forEach((c) => {
       const norm = normalizeCharName(c);
       if (norm) set.add(norm);
     });
   }
-
-  // dialogue
   if (Array.isArray(chunk.body)) {
     chunk.body.forEach((b) => {
       if (!b) return;
@@ -48,67 +45,90 @@ function getSceneCharactersFromChunk(chunk) {
         if (norm) set.add(norm);
       }
       if (b.type === "dualDialogue") {
-        if (b.left?.character) {
-          const norm = normalizeCharName(b.left.character);
-          if (norm) set.add(norm);
-        }
-        if (b.right?.character) {
-          const norm = normalizeCharName(b.right.character);
-          if (norm) set.add(norm);
-        }
+        if (b.left?.character) set.add(normalizeCharName(b.left.character));
+        if (b.right?.character) set.add(normalizeCharName(b.right.character));
       }
     });
   }
-
   return Array.from(set);
 }
 
-/* ---------------------------------------------------
-   helpers
---------------------------------------------------- */
 function formatBeatLabel(id) {
   switch (id) {
-    case "opening-image":
-      return "Opening Image";
-    case "inciting-incident":
-      return "Inciting Incident";
-    case "break-into-2":
-      return "Break into 2";
-    case "midpoint":
-      return "Midpoint";
-    case "break-into-3":
-      return "Break into 3";
-    case "climax":
-      return "Climax";
-    case "final-image":
-      return "Final Image";
-    default:
-      return id || "";
+    case "opening-image": return "Opening Image";
+    case "inciting-incident": return "Inciting Incident";
+    case "break-into-2": return "Break into 2 (Act 1 End)";
+    case "midpoint": return "Midpoint";
+    case "break-into-3": return "Break into 3 (Act 2 End)";
+    case "climax": return "Climax";
+    case "final-image": return "Final Image";
+    default: return id || "";
   }
 }
 
 function colorForBeat(id) {
   switch (id) {
-    case "opening-image":
-      return "linear-gradient(180deg, #45f, #78a7ff)";
-    case "inciting-incident":
-      return "linear-gradient(180deg, #ff7a4a, #ffb88a)";
-    case "break-into-2":
-      return "linear-gradient(180deg, #ff3f72, #ff96c2)";
-    case "midpoint":
-      return "linear-gradient(180deg, #ffd13b, #ffeaa0)";
-    case "break-into-3":
-      return "linear-gradient(180deg, #61e294, #a9ffce)";
-    case "climax":
-      return "linear-gradient(180deg, #ff375f, #ff7d97)";
-    case "final-image":
-      return "linear-gradient(180deg, #53cde2, #9be6f3)";
-    default:
-      return "linear-gradient(180deg, #292929, #111)";
+    case "opening-image": return "#45f";
+    case "inciting-incident": return "#ff7a4a";
+    case "break-into-2": return "#ff3f72";
+    case "midpoint": return "#ffd13b";
+    case "break-into-3": return "#61e294";
+    case "climax": return "#ff375f";
+    case "final-image": return "#53cde2";
+    default: return "#333";
   }
 }
 
-// ghost add button
+const PLOT_OPTIONS = [
+  { label: "Plot A", value: "Plot A", color: "#ff9c4a" },
+  { label: "Plot B", value: "Plot B", color: "#8a7dff" },
+  { label: "Plot C", value: "Plot C", color: "#ff6fa9" },
+  { label: "Runner", value: "Runner", color: "#3ccfa9" },
+  { label: "Alt", value: "Alt", color: "#ffd94f" },
+  { label: "Setup", value: "Setup", color: "#555" }, 
+  { label: "Payoff", value: "Payoff", color: "#fff" },
+];
+
+function getColorsForTracks(tracks = []) {
+  if (!tracks || tracks.length === 0) return ["#1a1a1a"];
+  return tracks.map(t => {
+    const opt = PLOT_OPTIONS.find(o => o.value === t);
+    return opt ? opt.color : "#444";
+  });
+}
+
+function ActHeader({ label, isCollapsed, onToggle, sceneCount }) {
+  return (
+    <div 
+      onClick={onToggle}
+      style={{
+        padding: "8px 6px", 
+        fontSize: "11px", 
+        fontWeight: "bold", 
+        color: isCollapsed ? "#888" : "#ccc", 
+        background: isCollapsed ? "#111" : "linear-gradient(90deg, #1a1a1a 0%, #0e0e0e 100%)",
+        borderBottom: "1px solid #333",
+        borderTop: "1px solid #222",
+        marginBottom: "8px",
+        marginTop: "8px",
+        cursor: "pointer",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        userSelect: "none"
+      }}
+    >
+      <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+        <span style={{fontSize:'10px', width:'12px'}}>{isCollapsed ? "▶" : "▼"}</span>
+        <span>{label}</span>
+      </div>
+      <span style={{fontSize:'10px', color:'#555', fontWeight:'normal'}}>
+        {sceneCount} scene{sceneCount !== 1 ? 's' : ''}
+      </span>
+    </div>
+  );
+}
+
 function AddSceneButton({ label, onClick }) {
   return (
     <button
@@ -118,8 +138,8 @@ function AddSceneButton({ label, onClick }) {
         background: "transparent",
         border: "1px dashed #333",
         borderRadius: "3px",
-        padding: "3px 6px",
-        margin: "3px 0",
+        padding: "4px",
+        margin: "2px 0",
         cursor: "pointer",
         textAlign: "center",
         color: "#555",
@@ -130,27 +150,15 @@ function AddSceneButton({ label, onClick }) {
       }}
       onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
       onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.2")}
-      title={label}
     >
-      +
+      + {label}
     </button>
   );
 }
 
-
 /* ---------------------------------------------------
-   Scene row
+   SCENE ROW COMPONENT
 --------------------------------------------------- */
-
-const CUSTOM_TAG_OPTIONS = [
-  { label: "None", value: "", color: "linear-gradient(180deg,#222,#111)" },
-  { label: "Plot A", value: "Plot A", color: "linear-gradient(180deg,#ff9c4a,#ffbc7d)" },
-  { label: "Plot B", value: "Plot B", color: "linear-gradient(180deg,#8a7dff,#c0b8ff)" },
-  { label: "Plot C", value: "Plot C", color: "linear-gradient(180deg,#ff6fa9,#ffb6d1)" },
-  { label: "Runner", value: "Runner", color: "linear-gradient(180deg,#3ccfa9,#9ef0d3)" },
-  { label: "Alt", value: "Alt", color: "linear-gradient(180deg,#ffd94f,#ffeea7)" },
-];
-
 function SortableChunkRow({
   id,
   index,
@@ -158,26 +166,43 @@ function SortableChunkRow({
   isSelected,
   onSelect,
   onDeleteScene,
-  onUpdateTag,
+  onUpdateTracks,
 }) {
   const locked = !!chunk.locked;
   const beatColor = colorForBeat(chunk.anchorRole);
-  const customColor =
-    chunk.customTagColor || "linear-gradient(180deg,#222,#111)";
+  
+  const currentTracks = Array.isArray(chunk.plotTracks) 
+    ? chunk.plotTracks 
+    : chunk.customTagLabel ? [chunk.customTagLabel] : [];
 
+  const trackColors = getColorsForTracks(currentTracks);
   const [showTagMenu, setShowTagMenu] = useState(false);
   const sceneChars = getSceneCharactersFromChunk(chunk);
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id,
-    disabled: locked,
-  });
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: locked });
+
+  const toggleTrack = (val) => {
+    let newTracks = [...currentTracks];
+    if (newTracks.includes(val)) newTracks = newTracks.filter(t => t !== val);
+    else newTracks.push(val);
+    onUpdateTracks(id, newTracks);
+  };
+
+  // AUTO-SCROLL REF
+  // We attach a ref to the DOM element if it is selected
+  const rowRef = useRef(null);
+  
+  useEffect(() => {
+    if (isSelected && rowRef.current) {
+      // Scroll into view with a little padding
+      rowRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isSelected]);
+
+  // Merge refs (dnd-kit needs one, we need one for scrolling)
+  // A simple way is to just put the ref on the inner div or wrap it
+  // But dnd-kit's setNodeRef is a function. Let's just use a wrapper div for dnd 
+  // and put our ref on the inner visible card.
 
   return (
     <div
@@ -185,198 +210,93 @@ function SortableChunkRow({
       style={{
         display: "flex",
         gap: "4px",
-        marginBottom: "4px",
+        marginBottom: "6px",
         transform: CSS.Transform.toString(transform),
         transition,
+        opacity: isDragging ? 0.5 : 1,
       }}
+      {...attributes}
+      {...(locked ? {} : listeners)}
     >
-      {/* structure/beat colour bar (existing) */}
-      <div
-        style={{
-          width: "8px",
-          borderRadius: "4px",
-          background: beatColor,
-          opacity: chunk.anchorRole ? 1 : 0.35,
-        }}
-      ></div>
+      <div style={{ width: "6px", borderRadius: "4px", background: chunk.anchorRole ? beatColor : "transparent", opacity: chunk.anchorRole ? 1 : 0 }} />
 
-      {/* actual card */}
       <div
+        ref={rowRef} // Attach scroll ref here
         style={{
           flex: 1,
           cursor: locked ? "not-allowed" : "grab",
-          padding: "6px 8px",
-          borderRadius: "4px",
-          background: isSelected
-            ? "#3f0850ff"
-            : locked
-            ? "rgba(180, 166, 60, 0.15)"
-            : "#1a1a1a",
-          border: isSelected
-            ? "1px solid #d312e8ff"
-            : locked
-            ? "1px solid rgba(220,180,90,0.4)"
-            : "1px solid transparent",
+          padding: "8px",
+          borderRadius: "6px",
+          background: isSelected ? "#3f0850" : locked ? "rgba(180, 166, 60, 0.1)" : "#1a1a1a",
+          border: isSelected ? "1px solid #d312e8" : locked ? "1px solid rgba(220,180,90,0.3)" : "1px solid #333",
           color: "#fff",
-          boxShadow: isDragging ? "0 4px 10px rgba(0,0,0,0.6)" : "none",
+          boxShadow: isDragging ? "0 8px 20px rgba(0,0,0,0.8)" : "none",
           fontSize: "13px",
-          lineHeight: "1.4em",
           position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px"
         }}
-        {...attributes}
-        {...(locked ? {} : listeners)}
         onClick={() => onSelect(id)}
       >
-        {/* top row */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: "6px",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ fontWeight: "bold", flex: 1 }}>
-            {index + 1}. {chunk.title || "(UNTITLED SCENE)"}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+          <div style={{ fontWeight: "600", flex: 1, lineHeight: "1.3" }}>
+            <span style={{color: "#555", marginRight: "6px", fontSize: "11px"}}>#{index + 1}</span>
+            {chunk.title || "(UNTITLED SCENE)"}
           </div>
-
-          {/* small tag pill */}
-          <div style={{ position: "relative" }}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowTagMenu((s) => !s);
-              }}
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: "3px",
-                color: "#fff",
-                fontSize: "10px",
-                fontFamily: "monospace",
-                padding: "0 4px",
-                cursor: "pointer",
-              }}
-              title="Set custom track / colour"
-            >
-              {chunk.customTagLabel ? chunk.customTagLabel : "tag"}
-            </button>
-
-            {showTagMenu && (
-              <div
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "110%",
-                  background: "#000",
-                  border: "1px solid #333",
-                  borderRadius: "4px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-                  zIndex: 999,
-                  minWidth: "120px",
-                  overflow: "hidden",
-                }}
-              >
-                {CUSTOM_TAG_OPTIONS.map((opt) => (
-                  <div
-                    key={opt.label}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "4px 6px",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                      background:
-                        chunk.customTagLabel === opt.value
-                          ? "rgba(255,255,255,0.08)"
-                          : "transparent",
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      onUpdateTag(id, opt.value, opt.color);
-                      setShowTagMenu(false);
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: "8px",
-                        height: "18px",
-                        borderRadius: "2px",
-                        background: opt.color,
-                      }}
-                    ></span>
-                    <span>{opt.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div style={{display:'flex', gap:'4px', alignItems:'center'}}>
+            {locked && <span title="Locked" style={{fontSize: "12px"}}>🔒</span>}
+            <button style={{ background: "transparent", color: "#666", border: "none", cursor: "pointer", fontSize: "14px", padding: "0 2px" }} title="Delete Scene" onClick={(e) => { e.stopPropagation(); onDeleteScene(id, chunk, index); }}>×</button>
           </div>
-
-          {locked ? (
-            <span title="locked to structure" style={{ fontSize: "12px" }}>
-              🔒
-            </span>
-          ) : null}
-
-          <button
-            style={{
-              background: "rgba(0,0,0,0.7)",
-              color: "#f66",
-              border: "1px solid #700",
-              borderRadius: "3px",
-              fontSize: "10px",
-              lineHeight: 1,
-              fontFamily: "monospace",
-              cursor: "pointer",
-              padding: "2px 4px",
-            }}
-            title="Delete (to trash)"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteScene(id, chunk, index);
-            }}
-          >
-            🗑
-          </button>
         </div>
 
-        {/* characters */}
-        {sceneChars.length > 0 ? (
-          <div style={{ fontSize: "10px", color: "#aaa", marginTop: "2px" }}>
-            {sceneChars.join(", ")}
-          </div>
-        ) : null}
+        {sceneChars.length > 0 && (
+           <div style={{ fontSize: "11px", color: "#888", lineHeight:"1.2" }}>{sceneChars.join(", ")}</div>
+        )}
 
-        {/* beat */}
-        {chunk.anchorRole ? (
-          <div style={{ fontSize: "10px", color: "#777", marginTop: "2px" }}>
+        {chunk.anchorRole && (
+          <div style={{ fontSize: "10px", color: beatColor, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "bold", marginTop: "2px" }}>
             {formatBeatLabel(chunk.anchorRole)}
           </div>
-        ) : null}
+        )}
+
+        <div style={{display:'flex', gap:'4px', flexWrap:'wrap', marginTop:'4px'}}>
+            <div style={{ position: "relative" }}>
+              <button onClick={(e) => { e.stopPropagation(); setShowTagMenu(!showTagMenu); }} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", color: "#aaa", fontSize: "9px", padding: "1px 6px", cursor: "pointer" }}>
+                {currentTracks.length > 0 ? "Edit Plots" : "+ Plot"}
+              </button>
+              {showTagMenu && (
+                <div style={{ position: "absolute", left: 0, top: "120%", background: "#111", border: "1px solid #444", borderRadius: "4px", boxShadow: "0 4px 12px rgba(0,0,0,0.5)", zIndex: 999, minWidth: "140px", padding: "4px" }} onMouseDown={(e) => e.stopPropagation()}>
+                  <div style={{fontSize:'10px', color:'#666', marginBottom:'4px', paddingLeft:'4px'}}>TOGGLE PLOTS</div>
+                  {PLOT_OPTIONS.map((opt) => {
+                    const isActive = currentTracks.includes(opt.value);
+                    return (
+                      <div key={opt.label} onClick={(e) => { e.stopPropagation(); toggleTrack(opt.value); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 6px", fontSize: "11px", cursor: "pointer", background: isActive ? "rgba(255,255,255,0.1)" : "transparent", borderRadius: "2px" }}>
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: opt.color, border: isActive ? "1px solid white" : "none" }} />
+                        <span style={{color: isActive ? "#fff" : "#888"}}>{opt.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {currentTracks.map(t => {
+               const color = PLOT_OPTIONS.find(o => o.value === t)?.color || "#555";
+               return <span key={t} style={{ fontSize:"9px", color: color, background: `${color}22`, border: `1px solid ${color}44`, padding: "1px 5px", borderRadius: "4px" }}>{t}</span>
+            })}
+        </div>
       </div>
-      {/* custom tag colour bar (new) */}
-      <div
-        style={{
-          width: "8px",
-          borderRadius: "4px",
-          background: customColor,
-          opacity: 1,
-        }}
-      ></div>
+      <div style={{ width: "6px", display: "flex", flexDirection: "column", gap: "1px" }}>
+        {trackColors.map((c, i) => <div key={i} style={{ flex: 1, background: c, borderRadius: "2px", minHeight: "4px" }} />)}
+      </div>
     </div>
   );
 }
 
 /* ---------------------------------------------------
-   MAIN SIDEBAR - THE COMPONENT
-   (now supports Character Panel)
+   MAIN SIDEBAR
 --------------------------------------------------- */
-export default function ChunkListSidebar({
-  db,
-  userId,
-  appId = "scene-chunks",
-}) {
+export default function ChunkListSidebar({ db, userId, appId = "scene-chunks" }) {
   const {
     project,
     updateProjectTitle,
@@ -391,481 +311,190 @@ export default function ChunkListSidebar({
     removeChunk,
     deletedScenes = [],
     restoreChunkFromTrash,
-    purgeDeletedChunk,
     updateChunk,
+    openCharacterPanel, openCrewPanel, openPropsPanel
   } = useProject();
 
   const [showDeleted, setShowDeleted] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [editProject, setEditProject] = useState(false);
-
-  // ⬇️ new state for character panel
-  const { openCharacterPanel, openCrewPanel, openPropsPanel } = useProject();
+  
+  const [collapsedActs, setCollapsedActs] = useState({
+    ACT_1: false,
+    ACT_2: false,
+    ACT_3: false
+  });
 
   useEffect(() => setIsClient(true), []);
 
   const script = getActiveScript();
   const order = script?.chunkOrder || [];
 
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = order.indexOf(active.id);
     const newIndex = order.indexOf(over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-
     const activeChunk = chunksById[active.id];
-    const overChunk = chunksById[over.id];
-
-    if (activeChunk?.locked || overChunk?.locked) return;
-
-    const newOrder = arrayMove(order, oldIndex, newIndex);
-    reorderChunks(newOrder);
+    if (activeChunk?.locked) return; 
+    reorderChunks(arrayMove(order, oldIndex, newIndex));
   };
 
   const items = useMemo(() => order, [order]);
 
-  const handleAddAfter = (afterId) => {
-    insertChunkAfter(afterId);
-  };
-
-  const handleAddAtTop = () => {
-    if (order.length === 0) {
-      addChunk();
-      return;
-    }
-    insertChunkAfter(order[0]);
-  };
-
-  const handleDeleteScene = (id) => {
-    removeChunk(id);
-  };
-
-  const handleUpdateTag = (sceneId, label, color) => {
+  const handleUpdateTracks = (sceneId, newTracks) => {
     if (typeof updateChunk === "function") {
-      updateChunk(sceneId, {
-        customTagLabel: label,
-        customTagColor: color,
-      });
+      updateChunk(sceneId, { plotTracks: newTracks });
     }
   };
 
-  // project meta — safe defaults
+  const toggleAct = (actKey) => {
+    setCollapsedActs(prev => ({ ...prev, [actKey]: !prev[actKey] }));
+  };
+
+  let currentAct = "ACT_1";
+  const sceneActMap = {}; 
+  const actCounts = { ACT_1: 0, ACT_2: 0, ACT_3: 0 };
+
+  order.forEach(id => {
+    const chunk = chunksById[id];
+    if(!chunk) return;
+    if(chunk.anchorRole === "break-into-2") currentAct = "ACT_2";
+    if(chunk.anchorRole === "break-into-3") currentAct = "ACT_3";
+    sceneActMap[id] = currentAct;
+    actCounts[currentAct]++;
+  });
+
   const meta = project?.meta || {};
   const title = project?.title || "Untitled Project";
 
   return (
-    <div
-      style={{
-        width: "320px",
-        borderRight: "1px solid #444",
-        background: "#111",
-        color: "#ddd",
-        fontSize: "13px",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        minHeight: 0,
-        position: "relative",
-        zIndex: 15,
-      }}
-    >
-      {/* top project card (always present) */}
-      <div
-        style={{
-          padding: "10px",
-          borderBottom: "1px solid #333",
-          background: "#181818",
-        }}
-      >
+    <div style={{ width: "340px", borderRight: "1px solid #333", background: "#0e0e0e", color: "#ddd", display: "flex", flexDirection: "column", height: "100vh", zIndex: 15 }}>
+      
+      {/* HEADER */}
+      <div style={{ padding: "12px", borderBottom: "1px solid #222", background: "#111" }}>
         {!editProject ? (
-          <>
-            <div style={{ fontSize: "11px", color: "#777" }}>PROJECT</div>
-            <div
-              style={{
-                fontWeight: "bold",
-                fontSize: "14px",
-                marginTop: "2px",
-                marginBottom: "4px",
-              }}
-            >
-              {title}
+          <div>
+            <div style={{ fontSize: "10px", color: "#555", letterSpacing: "1px", fontWeight: "bold" }}>PROJECT</div>
+            <div style={{ fontWeight: "700", fontSize: "16px", margin: "4px 0", color: "#fff" }}>{title}</div>
+            <div style={{display:'flex', gap:'6px', marginTop:'8px'}}>
+               <button onClick={() => setEditProject(true)} style={btnStyle}>✎ Edit Info</button>
+               <button onClick={openCharacterPanel} style={{...btnStyle, color:"#fb8"}}>🧬 Characters</button>
+               <button onClick={openCrewPanel} style={{...btnStyle, color:"#8bf"}}>👷 Crew</button>
+               <button onClick={openPropsPanel} style={{...btnStyle, color:"#d8f"}}>📦 Props</button>
             </div>
-            {meta.author ? (
-              <div style={{ fontSize: "11px", color: "#aaa" }}>
-                by {meta.author}
-              </div>
-            ) : null}
-            <div style={{ fontSize: "10px", color: "#666", marginTop: "4px" }}>
-              {meta.draft ? `Draft: ${meta.draft}` : "Draft: —"}
-            </div>
-            {meta.contact ? (
-              <div style={{ fontSize: "10px", color: "#666" }}>
-                {meta.contact}
-              </div>
-            ) : null}
-
-            <div style={{ marginTop: "6px", display: "flex", gap: "6px" }}>
-              <button
-                onClick={() => setEditProject(true)}
-                style={{
-                  background: "transparent",
-                  border: "1px solid #444",
-                  borderRadius: "3px",
-                  color: "#fff",
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  cursor: "pointer",
-                }}
-              >
-                Edit details
-              </button>
-
-              {/* ⬇️ new button */}
-              <button
-                onClick={openCharacterPanel}
-                style={{
-                  background: "linear-gradient(180deg,#f39a3b,#b96f2a)",
-                  border: "1px solid rgba(255,179,90,0.5)",
-                  borderRadius: "3px",
-                  color: "#fff",
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  cursor: "pointer",
-                  display: "flex",
-                  gap: "4px",
-                  alignItems: "center",
-                }}
-                title="Open character dossier for this project"
-              >
-                🧬 Characters
-              </button>
-              <button
-                onClick={openCrewPanel}
-                style={{
-                  background: "linear-gradient(180deg,#3b9af3,#2a6fb9)",
-                  border: "1px solid rgba(90,179,255,0.5)",
-                  borderRadius: "3px",
-                  color: "#fff",
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  cursor: "pointer",
-                }}
-              >
-                👷 Crew
-              </button>
-
-              <button
-                onClick={openPropsPanel}
-                style={{
-                  background: "linear-gradient(180deg,#9a3bf3,#6f2ab9)",
-                  border: "1px solid rgba(179,90,255,0.5)",
-                  borderRadius: "3px",
-                  color: "#fff",
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  cursor: "pointer",
-                }}
-              >
-                📦 Props
-              </button>
-            </div>
-          </>
+          </div>
         ) : (
-          <>
-            <div style={{ fontSize: "11px", color: "#777" }}>
-              EDIT PROJECT DETAILS
-            </div>
-            <input
-              style={projInputStyle}
-              value={title}
-              onChange={(e) =>
-                typeof updateProjectTitle === "function" &&
-                updateProjectTitle(e.target.value)
-              }
-              placeholder="Project title"
-            />
-            <input
-              style={projInputStyle}
-              value={meta.author || ""}
-              onChange={(e) =>
-                typeof updateProjectMeta === "function" &&
-                updateProjectMeta({ ...meta, author: e.target.value })
-              }
-              placeholder="Author"
-            />
-            <input
-              style={projInputStyle}
-              value={meta.draft || ""}
-              onChange={(e) =>
-                typeof updateProjectMeta === "function" &&
-                updateProjectMeta({ ...meta, draft: e.target.value })
-              }
-              placeholder="Draft (e.g. v1, Blue rev.)"
-            />
-            <input
-              style={projInputStyle}
-              value={meta.contact || ""}
-              onChange={(e) =>
-                typeof updateProjectMeta === "function" &&
-                updateProjectMeta({ ...meta, contact: e.target.value })
-              }
-              placeholder="Contact info"
-            />
-            <div style={{ marginTop: "6px", display: "flex", gap: "4px" }}>
-              <button
-                onClick={() => setEditProject(false)}
-                style={{
-                  background: "transparent",
-                  border: "1px solid #444",
-                  borderRadius: "3px",
-                  color: "#fff",
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  cursor: "pointer",
-                }}
-              >
-                Done
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* scenes header */}
-      <div
-        style={{
-          padding: "8px",
-          borderBottom: "1px solid #444",
-          fontSize: "11px",
-          color: "#888",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexShrink: 0,
-        }}
-      >
-        <span>SCENES</span>
-        <span style={{ color: "#555", fontStyle: "italic" }}>
-          (drag to reorder)
-        </span>
-      </div>
-
-      {/* scrollable list */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          padding: "8px",
-          paddingBottom: "120px",
-        }}
-      >
-        <AddSceneButton label="Add Scene Here (Top)" onClick={handleAddAtTop} />
-
-        {isClient ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={items}
-              strategy={verticalListSortingStrategy}
-            >
-              {items.map((id, idx) => {
-                const chunk = chunksById[id];
-                if (!chunk) return null;
-                const isSelected = id === selectedChunkId;
-                return (
-                  <div key={id} style={{ marginBottom: "4px" }}>
-                    <SortableChunkRow
-                      id={id}
-                      index={idx}
-                      chunk={chunk}
-                      isSelected={isSelected}
-                      onSelect={selectChunk}
-                      onDeleteScene={handleDeleteScene}
-                      onUpdateTag={handleUpdateTag}
-                    />
-                    <AddSceneButton
-                      label="Add Scene After"
-                      onClick={() => handleAddAfter(id)}
-                    />
-                  </div>
-                );
-              })}
-            </SortableContext>
-          </DndContext>
-        ) : (
-          items.map((id, idx) => {
-            const chunk = chunksById[id];
-            if (!chunk) return null;
-            const isSelected = id === selectedChunkId;
-            return (
-              <div key={id} style={{ marginBottom: "4px" }}>
-                <SortableChunkRow
-                  id={id}
-                  index={idx}
-                  chunk={chunk}
-                  isSelected={isSelected}
-                  onSelect={selectChunk}
-                  onDeleteScene={handleDeleteScene}
-                  onUpdateTag={handleUpdateTag}
-                />
-                <AddSceneButton
-                  label="Add Scene After"
-                  onClick={() => handleAddAfter(id)}
-                />
-              </div>
-            );
-          })
-        )}
-
-        {items.length > 0 ? (
-          <AddSceneButton label="Add Scene At End" onClick={addChunk} />
-        ) : null}
-      </div>
-
-      {/* trash drawer */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 100,
-          left: 0,
-          right: 0,
-          background: "#0c0c0c",
-          borderTop: "1px solid #333",
-          padding: "6px 8px",
-        }}
-      >
-        <button
-          onClick={() => setShowDeleted((s) => !s)}
-          style={{
-            width: "100%",
-            background: "rgba(200,30,30,0.08)",
-            border: "1px solid rgba(255,80,80,0.3)",
-            borderRadius: "4px",
-            color: "#fff",
-            fontSize: "11px",
-            fontFamily: "monospace",
-            textAlign: "left",
-            padding: "4px 6px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            cursor: "pointer",
-          }}
-        >
-          <span>🗑 Deleted ({deletedScenes?.length || 0})</span>
-          <span style={{ opacity: 0.6 }}>{showDeleted ? "▾" : "▸"}</span>
-        </button>
-
-        {showDeleted && (
-          <div
-            style={{
-              marginTop: "6px",
-              maxHeight: "150px",
-              overflowY: "auto",
-              border: "1px solid #222",
-              borderRadius: "4px",
-            }}
-          >
-            {(deletedScenes || []).length === 0 ? (
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "#666",
-                  padding: "8px",
-                  textAlign: "center",
-                }}
-              >
-                (nothing here)
-              </div>
-            ) : (
-              deletedScenes.map((item, idx) => {
-                const scene = item.scene || item.chunk || item;
-                const key = item.id || scene?.id || `trash-${idx}`;
-                return (
-                  <div
-                    key={key}
-                    style={{
-                      padding: "6px 6px 8px",
-                      borderBottom: "1px solid #111",
-                      fontSize: "11px",
-                      color: "#ddd",
-                      background: "rgba(0,0,0,0.35)",
-                    }}
-                  >
-                    <div style={{ fontWeight: "bold" }}>
-                      {scene?.title || "(untitled)"}{" "}
-                      {scene?.anchorRole
-                        ? "· " + formatBeatLabel(scene.anchorRole)
-                        : ""}
-                    </div>
-                    <div
-                      style={{ marginTop: "4px", display: "flex", gap: "6px" }}
-                    >
-                      <button
-                        style={smallBtn("#b7f3b7")}
-                        onClick={() => {
-                          if (typeof restoreChunkFromTrash === "function") {
-                            restoreChunkFromTrash(item.id || idx);
-                          }
-                        }}
-                      >
-                        Restore
-                      </button>
-                      {typeof purgeDeletedChunk === "function" ? (
-                        <button
-                          style={smallBtn("#f6b3b3")}
-                          onClick={() => purgeDeletedChunk(item.id || idx)}
-                        >
-                          Delete forever
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            )}
+          <div style={{display:'flex', flexDirection:'column', gap:'6px'}}>
+            <input style={inputStyle} value={title} onChange={e => updateProjectTitle(e.target.value)} placeholder="Title" />
+            <input style={inputStyle} value={meta.author || ""} onChange={e => updateProjectMeta({author:e.target.value})} placeholder="Author" />
+            <button onClick={() => setEditProject(false)} style={btnStyle}>Done</button>
           </div>
         )}
       </div>
 
+      {/* SCENE LIST */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px", paddingBottom: "100px" }}>
+        <AddSceneButton label="New Scene at Top" onClick={() => insertChunkAfter(null)} />
 
+        {isClient ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items} strategy={verticalListSortingStrategy}>
+              {items.map((id, idx) => {
+                const chunk = chunksById[id];
+                if (!chunk) return null;
 
+                let headerToRender = null;
+                let actKeyForHeader = null;
+
+                if (idx === 0) {
+                    headerToRender = "ACT 1";
+                    actKeyForHeader = "ACT_1";
+                }
+                if (chunk.anchorRole === "break-into-2") {
+                    headerToRender = "ACT 2";
+                    actKeyForHeader = "ACT_2";
+                }
+                if (chunk.anchorRole === "break-into-3") {
+                    headerToRender = "ACT 3";
+                    actKeyForHeader = "ACT_3";
+                }
+
+                const myAct = sceneActMap[id];
+                const isHidden = collapsedActs[myAct];
+
+                return (
+                  <React.Fragment key={id}>
+                    {headerToRender && (
+                      <ActHeader 
+                        label={headerToRender} 
+                        isCollapsed={collapsedActs[actKeyForHeader]} 
+                        onToggle={() => toggleAct(actKeyForHeader)}
+                        sceneCount={actCounts[actKeyForHeader]}
+                      />
+                    )}
+
+                    {!isHidden && (
+                      <div style={{ marginBottom: "0px" }}>
+                        <SortableChunkRow
+                          id={id}
+                          index={idx}
+                          chunk={chunk}
+                          isSelected={id === selectedChunkId}
+                          onSelect={selectChunk}
+                          onDeleteScene={removeChunk}
+                          onUpdateTracks={handleUpdateTracks}
+                        />
+                        <AddSceneButton label="Scene" onClick={() => insertChunkAfter(id)} />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+        ) : null}
+      </div>
+
+      {/* TRASH FOOTER */}
+      <div style={{ borderTop: "1px solid #333", background: "#0c0c0c", padding: "8px" }}>
+          <button onClick={() => setShowDeleted(!showDeleted)} style={{...btnStyle, width:"100%", justifyContent:"space-between", display:"flex"}}>
+             <span>🗑 Deleted Scenes ({deletedScenes.length})</span>
+             <span>{showDeleted ? "▼" : "▲"}</span>
+          </button>
+          {showDeleted && deletedScenes.length > 0 && (
+            <div style={{ maxHeight:"120px", overflowY:"auto", marginTop:"8px", background:"#111", border:"1px solid #333", borderRadius:"4px" }}>
+               {deletedScenes.map((item, i) => (
+                  <div key={i} style={{padding:"6px", borderBottom:"1px solid #222", fontSize:"10px", display:"flex", justifyContent:"space-between"}}>
+                     <span style={{color:"#888"}}>{item.scene?.title || "Untitled"}</span>
+                     <button onClick={() => restoreChunkFromTrash(item.id || i)} style={{cursor:"pointer", color:"#6f6", background:"none", border:"none"}}>Restore</button>
+                  </div>
+               ))}
+            </div>
+          )}
+      </div>
     </div>
   );
 }
 
-const projInputStyle = {
-  width: "100%",
-  background: "#000",
-  border: "1px solid #444",
-  color: "#fff",
-  padding: "4px 6px",
-  borderRadius: "3px",
+const btnStyle = {
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  color: "#ccc",
+  borderRadius: "4px",
+  padding: "4px 8px",
   fontSize: "11px",
-  marginTop: "4px",
+  cursor: "pointer",
 };
 
-function smallBtn(color) {
-  return {
-    background: "rgba(0,0,0,0.4)",
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: "3px",
-    color,
-    fontSize: "10px",
-    padding: "2px 6px",
-    cursor: "pointer",
-  };
-}
+const inputStyle = {
+  background: "#000",
+  border: "1px solid #333",
+  color: "#fff",
+  padding: "6px",
+  borderRadius: "4px",
+  fontSize: "12px"
+};

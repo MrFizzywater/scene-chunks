@@ -1,0 +1,17 @@
+appId: com.natelacroix.scenechunks
+asar: true
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+
+files:
+  - .next/standalone/**/*     # Next's traced server + minimal deps
+  - .next/static/**/*         # Next's client assets
+  - public/**/*               # your public files (projects, etc.)
+  - main.js
+  - next.config.*
+  - package.json
+
+win:
+  target:
+    - nsis

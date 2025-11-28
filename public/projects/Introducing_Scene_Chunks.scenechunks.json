@@ -1,0 +1,368 @@
+{
+  "project": {
+    "id": "proj_intro_script",
+    "title": "Introducing Scene Chunks",
+    "logline": "A video script introducing the Scene Chunks app features.",
+    "settings": {
+      "activeScriptId": "script_main_draft",
+      "activeSkinId": "DEFAULT"
+    },
+    "meta": {
+      "author": "YOU",
+      "email": "",
+      "company": "Scene Chunks",
+      "draftDate": "2025-11-26"
+    },
+    "chunks": [
+      "chunk_intro",
+      "chunk_feature_1",
+      "chunk_feature_2",
+      "chunk_feature_3",
+      "chunk_feature_4",
+      "chunk_outro"
+    ],
+    "scripts": [
+      "script_main_draft"
+    ]
+  },
+  "chunksById": {
+    "chunk_intro": {
+      "id": "chunk_intro",
+      "title": "INT. DESK SETUP - DAY",
+      "body": [
+        {
+          "type": "action",
+          "text": "**[CAMERA ON YOU]**\n\n**SETTING:** Desk setup, maybe the 3D printer visible in the back, nice mic.",
+          "id": "blk_intro_1"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "slightly tired but enthusiastic",
+          "dialogue": "Okay, so... writing scripts.",
+          "id": "blk_intro_2",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "(beat)\n\nThe traditional way is... fine? I guess? You open a blank page, you stare at the blinking cursor, and you just start typing. It’s one giant, endless scroll. It’s a wall of text.",
+          "id": "blk_intro_3"
+        },
+        {
+          "type": "action",
+          "text": "**[CUT TO: Screen recording of a standard script in a PDF or generic editor, scrolling endlessly. It looks exhausting.]**",
+          "id": "blk_intro_4"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "And that works for some people. But my brain? My brain doesn’t work like a typewriter. My brain works like an NLE. It works like a timeline.",
+          "id": "blk_intro_5",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[CUT TO: YOU]**",
+          "id": "blk_intro_6"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "",
+          "dialogue": "I wanted to write the way I edit video. I wanted to move pieces around. I wanted to see the *structure* without scrolling past page 50 just to remember what happened on page 10.\n\nSo... I couldn't find a tool that did exactly what I wanted. So I wrote a script. Well, I wrote an app.\n\nIt’s called Scene Chunks.",
+          "id": "blk_intro_7",
+          "status": "draft"
+        }
+      ],
+      "characters": [
+        "YOU"
+      ],
+      "props": [
+        "3D Printer",
+        "Nice Mic"
+      ],
+      "emotionalBeat": "Frustration to Solution",
+      "status": "draft",
+      "tags": [
+        "Intro",
+        "Hook"
+      ],
+      "estPageLength": 1.0,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    },
+    "chunk_feature_1": {
+      "id": "chunk_feature_1",
+      "title": "INT. SCREEN RECORDING - CHUNKS",
+      "body": [
+        {
+          "type": "action",
+          "text": "**[CUT TO: Screen recording of Scene Chunks. Mouse hovering over distinct \"cards\" or blocks of text.]**",
+          "id": "blk_f1_1"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "Here’s the core idea. Instead of one long document, everything is a **Chunk**.",
+          "id": "blk_f1_2",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[Action on screen: Dragging a chunk from the bottom of the list to the top.]**",
+          "id": "blk_f1_3"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "You write a scene. It’s a block. If you realize, \"Oh, actually, this argument needs to happen *before* they rob the bank,\" you don't have to copy-paste a huge block of text and mess up your formatting. You just grab the chunk, drag it, drop it.",
+          "id": "blk_f1_4",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[CUT TO: YOU]**",
+          "id": "blk_f1_5"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "",
+          "dialogue": "It’s modular. It’s like... Legos for your story. Or 3D printing. You’re printing the layers one by one, but you can swap the filament whenever you want. That metaphor fell apart, but you get it.",
+          "id": "blk_f1_6",
+          "status": "draft"
+        }
+      ],
+      "characters": [
+        "YOU"
+      ],
+      "props": [],
+      "emotionalBeat": "Modular logic",
+      "status": "draft",
+      "tags": [
+        "Feature",
+        "Chunks"
+      ],
+      "estPageLength": 0.8,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    },
+    "chunk_feature_2": {
+      "id": "chunk_feature_2",
+      "title": "INT. SCREEN RECORDING - STRUCTURE",
+      "body": [
+        {
+          "type": "action",
+          "text": "**[CUT TO: Screen recording showing the Structure Template sidebar/timeline.]**",
+          "id": "blk_f2_1"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "And because I’m terrible at pacing, I built in structure templates.",
+          "id": "blk_f2_2",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[Action on screen: Selecting \"3-Act Structure\"]**",
+          "id": "blk_f2_3"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "So right here? I can see I’m in Act 2. I can see I need an \"Inciting Incident\" here. The app actually tells me where my chunks are landing. It’s not just \"Scene 4,\" it’s \"Scene 4: The Part Where Everything Goes Wrong.\"",
+          "id": "blk_f2_4",
+          "status": "draft"
+        }
+      ],
+      "characters": [
+        "YOU"
+      ],
+      "props": [],
+      "emotionalBeat": "Structure Awareness",
+      "status": "draft",
+      "tags": [
+        "Feature",
+        "Structure"
+      ],
+      "estPageLength": 0.5,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    },
+    "chunk_feature_3": {
+      "id": "chunk_feature_3",
+      "title": "INT. DESK SETUP - PANELS",
+      "body": [
+        {
+          "type": "action",
+          "text": "**[CUT TO: YOU]**",
+          "id": "blk_f3_1"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "",
+          "dialogue": "Also, as a producer—or just the guy who has to go buy the props—I hate getting to the end of a script and realizing I forgot to track who is in what scene.",
+          "id": "blk_f3_2",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[CUT TO: Screen recording of the Side Panels. Adding a Prop.]**",
+          "id": "blk_f3_3"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "So, Scene Chunks has these panels right next to the editor. You’re writing a scene, you tag the characters. You tag the props.",
+          "id": "blk_f3_4",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[Action on screen: Typing \"Prop: Comically Large Spoon\"]**",
+          "id": "blk_f3_5"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "\"We need a comically large spoon.\" Boom. Tagged. Now the database knows we need a spoon. It’s thinking about the shot list *while* I’m writing the dialogue.",
+          "id": "blk_f3_6",
+          "status": "draft"
+        }
+      ],
+      "characters": [
+        "YOU"
+      ],
+      "props": [
+        "Comically Large Spoon"
+      ],
+      "emotionalBeat": "Productivity",
+      "status": "draft",
+      "tags": [
+        "Feature",
+        "Panels"
+      ],
+      "estPageLength": 0.7,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    },
+    "chunk_feature_4": {
+      "id": "chunk_feature_4",
+      "title": "INT. DESK SETUP - TECH",
+      "body": [
+        {
+          "type": "action",
+          "text": "**[CUT TO: YOU]**",
+          "id": "blk_f4_1"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "",
+          "dialogue": "And for the nerds—I see you—this isn’t some cloud subscription service where your script gets held hostage.\n\nIt’s local-first.",
+          "id": "blk_f4_2",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[CUT TO: Screen shot of a .scenechunks.json file on a desktop.]**",
+          "id": "blk_f4_3"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "V.O.",
+          "dialogue": "It saves as a `.json` file right on your machine. You own the data. You can version control it. You can break it. It’s yours.",
+          "id": "blk_f4_4",
+          "status": "draft"
+        }
+      ],
+      "characters": [
+        "YOU"
+      ],
+      "props": [
+        ".json file"
+      ],
+      "emotionalBeat": "Tech Credibility",
+      "status": "draft",
+      "tags": [
+        "Feature",
+        "Tech"
+      ],
+      "estPageLength": 0.5,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    },
+    "chunk_outro": {
+      "id": "chunk_outro",
+      "title": "INT. DESK SETUP - DAY",
+      "body": [
+        {
+          "type": "action",
+          "text": "**[CUT TO: YOU]**",
+          "id": "blk_out_1"
+        },
+        {
+          "type": "dialogueBlock",
+          "character": "YOU",
+          "parenthetical": "",
+          "dialogue": "Now, full disclosure: This is a prototype. It is actively being developed. It’s a little janky. It’s growing up.\n\nIt’s not a polished consumer app yet, so don't expect it to make you coffee. But it’s functional. It’s how I want to write.\n\nSo yeah. Scene Chunks.\n\n(Beat)\n\nLet’s go make some weird stuff.",
+          "id": "blk_out_2",
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "**[FADE TO BLACK]**\n**[Text on screen: SCENE CHUNKS logo]**",
+          "id": "blk_out_3"
+        }
+      ],
+      "characters": [
+        "YOU"
+      ],
+      "props": [],
+      "emotionalBeat": "Call to Action",
+      "status": "draft",
+      "tags": [
+        "Outro"
+      ],
+      "estPageLength": 0.5,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    }
+  },
+  "scriptsById": {
+    "script_main_draft": {
+      "id": "script_main_draft",
+      "name": "Main Video Script",
+      "chunkOrder": [
+        "chunk_intro",
+        "chunk_feature_1",
+        "chunk_feature_2",
+        "chunk_feature_3",
+        "chunk_feature_4",
+        "chunk_outro"
+      ],
+      "structureTemplate": null,
+      "anchors": []
+    }
+  },
+  "selectedChunkId": "chunk_intro",
+  "deletedScenes": [],
+  "version": "scene-chunks-v1",
+  "savedAt": "2025-11-26T12:00:00.000Z"
+}

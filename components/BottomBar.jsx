@@ -4,6 +4,17 @@ import React, { useMemo, useState } from "react";
 import { useProject } from "../context/ProjectContext";
 import { STRUCTURE_TEMPLATES, getTemplateById } from "./StructureTemplates";
 
+// ⬇️ 1. Re-define colors here to match Sidebar
+const PLOT_COLORS = {
+  "Plot A": "#ff9c4a",
+  "Plot B": "#8a7dff",
+  "Plot C": "#ff6fa9",
+  "Runner": "#3ccfa9",
+  "Alt": "#ffd94f",
+  "Setup": "#888",
+  "Payoff": "#eee",
+};
+
 export default function BottomBar({ onOpenPreview }) {
   const {
     getActiveScript,
@@ -19,7 +30,11 @@ export default function BottomBar({ onOpenPreview }) {
   } = useProject();
 
   const [dragging, setDragging] = useState(null);
-  const [activeInspector, setActiveInspector] = useState(null); // "anchored" | "off" | "missing" | null
+  const [activeInspector, setActiveInspector] = useState(null); 
+  
+  // ⬇️ 2. New state for hover tooltip
+  const [hoveredScene, setHoveredScene] = useState(null); 
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
   const selectedTemplateId = project?.meta?.structureTemplateId || "3-act";
   const template =
@@ -48,6 +63,12 @@ export default function BottomBar({ onOpenPreview }) {
       const startPct = total ? (start / total) * 100 : 0;
       const endPct = total ? (end / total) * 100 : 0;
       const midPct = (startPct + endPct) / 2;
+      
+      // ⬇️ Extract Data for visualization
+      const plots = chunk.plotTracks || (chunk.customTagLabel ? [chunk.customTagLabel] : []);
+      // Quick char summary
+      const chars = (chunk.characters || []).slice(0,3); 
+
       return {
         id,
         title: chunk?.title || `Scene ${idx + 1}`,
@@ -55,15 +76,15 @@ export default function BottomBar({ onOpenPreview }) {
         startPct,
         endPct,
         midPct,
+        length: len,
+        plots,
+        chars
       };
     });
 
-    // map template beats to "explicit" vs "missing"
+    // map template beats
     const beats = (template.beats || []).map((b) => {
-      // explicit scene tagged with this beat?
       const explicit = scenes.find((s) => s.anchorRole === b.id);
-
-      // nearest scene (for display)
       let nearest = null;
       if (scenes.length) {
         nearest = scenes.reduce((best, s) => {
@@ -75,7 +96,7 @@ export default function BottomBar({ onOpenPreview }) {
 
       if (explicit) {
         const diff = Math.abs(explicit.midPct - b.pct);
-        const isOff = diff > 5; // tweak threshold
+        const isOff = diff > 5; 
         return {
           ...b,
           hasExplicit: true,
@@ -84,21 +105,14 @@ export default function BottomBar({ onOpenPreview }) {
           actualPct: explicit.midPct,
           diff,
           status: isOff ? "off" : "scene",
-          nearestSceneId: nearest?.id || null,
-          nearestPct: nearest?.midPct ?? null,
         };
       }
 
       return {
         ...b,
         hasExplicit: false,
-        sceneId: null,
-        sceneTitle: "",
-        actualPct: null,
-        diff: null,
         status: "gap",
         nearestSceneId: nearest?.id || null,
-        nearestPct: nearest?.midPct ?? null,
       };
     });
 
@@ -109,13 +123,8 @@ export default function BottomBar({ onOpenPreview }) {
     ? sceneData.find((s) => s.id === selectedChunkId)
     : null;
 
-  // group for the chips
-  const anchoredBeats = beatStatuses.filter(
-    (b) => b.hasExplicit && b.status === "scene"
-  );
-  const offBeats = beatStatuses.filter(
-    (b) => b.hasExplicit && b.status === "off"
-  );
+  const anchoredBeats = beatStatuses.filter((b) => b.hasExplicit && b.status === "scene");
+  const offBeats = beatStatuses.filter((b) => b.hasExplicit && b.status === "off");
   const missingBeats = beatStatuses.filter((b) => !b.hasExplicit);
 
   const handleBeatMouseDown = (beat, e) => {
@@ -124,23 +133,24 @@ export default function BottomBar({ onOpenPreview }) {
   };
 
   const handleMouseMove = (e) => {
-    if (!dragging) return;
-    const pct = Math.min(Math.max((e.clientX / window.innerWidth) * 100, 0), 100);
-    const closest =
-      sceneData.length > 0
-        ? sceneData.reduce((best, s) => {
-            const d = Math.abs(s.midPct - pct);
-            if (!best) return { ...s, diff: d };
-            return d < best.diff ? { ...s, diff: d } : best;
-          }, null)
-        : null;
-    setDragging({ ...dragging, pct, closest });
+    // Drag logic
+    if (dragging) {
+      const pct = Math.min(Math.max((e.clientX / window.innerWidth) * 100, 0), 100);
+      const closest =
+        sceneData.length > 0
+          ? sceneData.reduce((best, s) => {
+              const d = Math.abs(s.midPct - pct);
+              if (!best) return { ...s, diff: d };
+              return d < best.diff ? { ...s, diff: d } : best;
+            }, null)
+          : null;
+      setDragging({ ...dragging, pct, closest });
+    }
   };
 
   const handleMouseUp = () => {
     if (!dragging) return;
     if (dragging.closest) {
-      // assign this beat to the nearest scene
       updateChunk(dragging.closest.id, { anchorRole: dragging.id });
       selectChunk(dragging.closest.id);
     }
@@ -167,22 +177,16 @@ export default function BottomBar({ onOpenPreview }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        {/* top row: controls + template */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
+        {/* TOP ROW: Controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <button
             onClick={addChunk}
             style={{
               background: "rgba(0,0,0,0.6)",
               border: "1px solid rgba(96,255,143,0.4)",
               color: "#eafff0",
-              padding: "5px 10px",
-              fontSize: "12px",
+              padding: "4px 8px",
+              fontSize: "11px",
               borderRadius: "4px",
               cursor: "pointer",
             }}
@@ -191,208 +195,131 @@ export default function BottomBar({ onOpenPreview }) {
           </button>
 
           <div style={{ fontSize: "10px", color: "#999" }}>
-            {totalPages ? `${Math.round(totalPages)} est. pages` : "No scenes"}
+            {totalPages ? `${totalPages.toFixed(1)} pages` : "0 pgs"}
           </div>
 
           <div style={{ flex: 1 }} />
 
-          {/* template selector lives here now */}
+          {/* Template Selector */}
           <select
             value={selectedTemplateId}
-            onChange={(e) =>
-              updateProjectMeta({
-                ...(project.meta || {}),
-                structureTemplateId: e.target.value,
-              })
-            }
+            onChange={(e) => updateProjectMeta({ ...(project.meta || {}), structureTemplateId: e.target.value })}
             style={{
               background: "#000",
               color: "#fff",
               border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: "4px",
-              padding: "3px 6px",
-              fontSize: "11px",
+              padding: "2px 6px",
+              fontSize: "10px",
               marginRight: "6px",
             }}
           >
             {Object.values(STRUCTURE_TEMPLATES).map((tpl) => (
-              <option key={tpl.id} value={tpl.id}>
-                {tpl.label}
-              </option>
+              <option key={tpl.id} value={tpl.id}>{tpl.label}</option>
             ))}
           </select>
 
-          <div style={{ fontSize: "10px", color: "#666", minWidth: "90px" }}>
-            {saveStatus === "saving"
-              ? "Saving..."
-              : saveStatus === "error"
-              ? "⚠ Save error"
-              : "Saved"}
+          <div style={{ fontSize: "10px", color: "#666", minWidth: "80px", textAlign:"right" }}>
+            {saveStatus === "saving" ? "Saving..." : saveStatus === "error" ? "⚠ Error" : "Saved"}
           </div>
 
-          <button
-            onClick={openWriterMode}
-            style={{
-              background: "rgba(129, 13, 122, 0.5)",
-              border: "1px solid rgba(255,255,255,0.05)",
-              color: "#cdecff",
-              padding: "5px 10px",
-              fontSize: "12px",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={openWriterMode} style={{ background: "rgba(129, 13, 122, 0.5)", border: "1px solid rgba(255,255,255,0.05)", color: "#cdecff", padding: "4px 8px", fontSize: "11px", borderRadius: "4px", cursor: "pointer" }}>
             Writer
           </button>
-          <button
-            onClick={onOpenPreview}
-            style={{
-              background: "rgba(0,0,0,0.5)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#fff",
-              padding: "5px 10px",
-              fontSize: "12px",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={onOpenPreview} style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", padding: "4px 8px", fontSize: "11px", borderRadius: "4px", cursor: "pointer" }}>
             Preview
           </button>
         </div>
 
-        {/* status chips row */}
+        {/* STATUS CHIPS */}
         <div style={{ display: "flex", gap: "6px", position: "relative" }}>
-          <BeatChip
-            label="Anchored"
-            color="#00dfff"
-            count={anchoredBeats.length}
-            active={activeInspector === "anchored"}
-            onClick={() =>
-              setActiveInspector(
-                activeInspector === "anchored" ? null : "anchored"
-              )
-            }
-          />
-          <BeatChip
-            label="Off-target"
-            color="#ffbb3d"
-            count={offBeats.length}
-            active={activeInspector === "off"}
-            onClick={() =>
-              setActiveInspector(activeInspector === "off" ? null : "off")
-            }
-          />
-          <BeatChip
-            label="Missing"
-            color="#ff4e4e"
-            count={missingBeats.length}
-            active={activeInspector === "missing"}
-            onClick={() =>
-              setActiveInspector(activeInspector === "missing" ? null : "missing")
-            }
-          />
+          <BeatChip label="Anchored" color="#00dfff" count={anchoredBeats.length} active={activeInspector === "anchored"} onClick={() => setActiveInspector(activeInspector === "anchored" ? null : "anchored")} />
+          <BeatChip label="Off-target" color="#ffbb3d" count={offBeats.length} active={activeInspector === "off"} onClick={() => setActiveInspector(activeInspector === "off" ? null : "off")} />
+          <BeatChip label="Missing" color="#ff4e4e" count={missingBeats.length} active={activeInspector === "missing"} onClick={() => setActiveInspector(activeInspector === "missing" ? null : "missing")} />
 
-          {/* floating inspector */}
           {activeInspector && (
-            <div
-              style={{
-                position: "absolute",
-                bottom: "46px",
-                right: 0,
-                background: "rgba(0,0,0,0.95)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "6px",
-                padding: "8px 10px",
-                width: "280px",
-                maxHeight: "180px",
-                overflowY: "auto",
-                zIndex: 12000,
-              }}
-            >
-              <InspectorContent
-                mode={activeInspector}
-                anchoredBeats={anchoredBeats}
-                offBeats={offBeats}
-                missingBeats={missingBeats}
-                onSelectScene={selectChunk}
-              />
+            <div style={{ position: "absolute", bottom: "46px", right: 0, background: "#111", border: "1px solid #333", borderRadius: "6px", padding: "8px", width: "260px", maxHeight: "200px", overflowY: "auto", zIndex: 12000 }}>
+              <InspectorContent mode={activeInspector} anchoredBeats={anchoredBeats} offBeats={offBeats} missingBeats={missingBeats} onSelectScene={selectChunk} />
             </div>
           )}
         </div>
 
-        {/* timeline row */}
+        {/* ⬇️ TIMELINE ROW */}
         <div
           style={{
             position: "relative",
-            height: "44px",
+            height: "48px", // slightly taller for plot tracks
             background: "linear-gradient(90deg, #111 0%, #181818 100%)",
             borderRadius: "6px",
             boxShadow: "inset 0 0 8px rgba(0,0,0,0.36)",
             overflow: "hidden",
+            marginTop: "2px"
           }}
+          onMouseLeave={() => setHoveredScene(null)}
         >
-          {/* scene blocks */}
-          <div style={{ position: "absolute", inset: "5px 6px" }}>
+          {/* SCENE BLOCKS */}
+          <div style={{ position: "absolute", inset: "4px 6px" }}>
             {sceneData.map((scene) => {
-              const isSelected =
-                selectedScene && selectedScene.id === scene.id;
+              const isSelected = selectedScene && selectedScene.id === scene.id;
               const hasBeat = !!scene.anchorRole;
+              
               return (
                 <div
                   key={scene.id}
                   onClick={() => selectChunk(scene.id)}
+                  onMouseEnter={(e) => {
+                      setHoveredScene(scene);
+                      setHoverPos({ x: e.clientX, y: -100 }); // Y is handled relative to bar
+                  }}
                   style={{
                     position: "absolute",
                     top: 0,
                     bottom: 0,
-                    left: `calc(${scene.startPct}% + 2px)`,
-                    width: `calc(${scene.endPct - scene.startPct}% - 2px)`,
-                    background: isSelected
-                      ? "rgba(141, 183, 255, 0.26)"
-                      : hasBeat
-                      ? "rgba(0,209,255,0.15)"
-                      : "rgba(255,255,255,0.015)",
-                    border: isSelected
-                      ? "1px solid rgba(141, 183, 255, 0.6)"
-                      : hasBeat
-                      ? "1px solid rgba(0,209,255,0.35)"
-                      : "1px solid rgba(255,255,255,0.01)",
-                    borderRadius: "4px",
+                    left: `calc(${scene.startPct}% + 1px)`,
+                    width: `calc(${scene.endPct - scene.startPct}% - 1px)`,
+                    background: isSelected ? "rgba(141, 183, 255, 0.15)" : hasBeat ? "rgba(0,209,255,0.08)" : "rgba(255,255,255,0.02)",
+                    border: isSelected ? "1px solid rgba(141, 183, 255, 0.6)" : hasBeat ? "1px solid rgba(0,209,255,0.3)" : "1px solid rgba(255,255,255,0.03)",
+                    borderTop: isSelected ? "2px solid #8db7ff" : undefined,
+                    borderRadius: "2px",
                     cursor: "pointer",
-                    transition: "all 0.1s ease-out",
+                    transition: "background 0.1s",
+                    overflow: "hidden"
                   }}
-                  title={scene.title}
-                ></div>
+                >
+                    {/* ⬇️ RENDER PLOT TRACKS INSIDE BLOCK */}
+                    <div style={{position:'absolute', bottom:0, left:0, right:0, display:'flex', flexDirection:'column-reverse', gap:'1px', padding:'1px'}}>
+                        {scene.plots.map((p, i) => (
+                            <div key={i} style={{ height: "3px", width: "100%", background: PLOT_COLORS[p] || "#666", borderRadius:"1px" }}></div>
+                        ))}
+                    </div>
+                </div>
               );
             })}
           </div>
 
-          {/* beat markers (draggable) */}
-          <div style={{ position: "absolute", inset: 0 }}>
+          {/* BEAT MARKERS */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
             {(template.beats || []).map((beat) => {
-              const mapped =
-                beatStatuses.find((b) => b.id === beat.id) || beat;
+              const mapped = beatStatuses.find((b) => b.id === beat.id) || beat;
               const color = getBeatColor(mapped);
               return (
                 <div
                   key={beat.id}
-                  onMouseDown={(e) => handleBeatMouseDown(beat, e)}
-                  onClick={() =>
-                    mapped.sceneId ? selectChunk(mapped.sceneId) : null
-                  }
                   style={{
                     position: "absolute",
                     top: 0,
                     bottom: 0,
                     left: `calc(${beat.pct}% - 1px)`,
-                    width: "2px",
+                    width: "1px",
                     background: color,
+                    pointerEvents: "auto", // allow grab
                     cursor: "grab",
+                    zIndex: 10
                   }}
+                  onMouseDown={(e) => handleBeatMouseDown(beat, e)}
                   title={beat.label}
                 >
-                  <div
-                    style={{
+                  <div style={{
                       position: "absolute",
                       top: "2px",
                       left: "4px",
@@ -401,6 +328,8 @@ export default function BottomBar({ onOpenPreview }) {
                       borderRadius: "3px",
                       fontSize: "9px",
                       whiteSpace: "nowrap",
+                      color: mapped.hasExplicit ? color : "#888",
+                      border: `1px solid ${mapped.hasExplicit ? color : "#444"}`
                     }}
                   >
                     {beat.label}
@@ -410,27 +339,76 @@ export default function BottomBar({ onOpenPreview }) {
             })}
           </div>
 
-          {/* drag helper */}
+          {/* DRAG HELPER */}
           {dragging?.closest && (
             <div
               style={{
                 position: "absolute",
-                bottom: "46px",
-                left: `calc(${dragging.pct}% - 70px)`,
+                bottom: "50px",
+                left: `calc(${dragging.pct}% - 50px)`,
                 background: "#000",
                 color: "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: "1px solid #444",
                 borderRadius: "4px",
-                padding: "3px 6px",
+                padding: "4px 8px",
                 fontSize: "10px",
                 whiteSpace: "nowrap",
+                zIndex: 20
               }}
             >
-              Move beat → {dragging.closest.title}
+              Set "{dragging.id}" to {dragging.closest.title}
             </div>
           )}
         </div>
       </div>
+
+      {/* ⬇️ RICH HOVER TOOLTIP (Portal-ish) */}
+      {hoveredScene && !dragging && (
+        <div style={{
+            position: "fixed",
+            bottom: "80px", // Fixed height above bar
+            left: Math.min(Math.max(hoverPos.x - 80, 10), window.innerWidth - 180) + "px",
+            width: "160px",
+            background: "#111",
+            border: "1px solid #333",
+            borderRadius: "6px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.8)",
+            padding: "8px",
+            zIndex: 10000,
+            pointerEvents: "none"
+        }}>
+            <div style={{fontSize: "11px", fontWeight: "bold", color: "#fff", marginBottom:"4px", lineHeight:"1.2"}}>
+                {hoveredScene.title}
+            </div>
+            <div style={{fontSize: "10px", color: "#666", marginBottom:"6px"}}>
+                {hoveredScene.length} pages • {Math.round(hoveredScene.midPct)}%
+            </div>
+            
+            {/* Characters */}
+            {hoveredScene.chars.length > 0 && (
+                <div style={{fontSize:"9px", color:"#aaa", marginBottom:"6px", lineHeight:"1.3"}}>
+                    <span style={{color:"#555"}}>FEAT:</span> {hoveredScene.chars.join(", ")}
+                </div>
+            )}
+
+            {/* Plots */}
+            {hoveredScene.plots.length > 0 && (
+                <div style={{display:'flex', gap:'2px', flexWrap:'wrap'}}>
+                    {hoveredScene.plots.map(p => (
+                        <span key={p} style={{fontSize:"8px", padding:"1px 3px", borderRadius:"2px", background: PLOT_COLORS[p] || "#444", color:"#000", fontWeight:"bold"}}>
+                            {p}
+                        </span>
+                    ))}
+                </div>
+            )}
+            
+            {hoveredScene.anchorRole && (
+                <div style={{marginTop:"6px", paddingTop:"4px", borderTop:"1px solid #222", fontSize:"9px", color:"#00dfff"}}>
+                    ★ {hoveredScene.anchorRole.toUpperCase().replace(/-/g, " ")}
+                </div>
+            )}
+        </div>
+      )}
     </>
   );
 }
@@ -445,150 +423,70 @@ function BeatChip({ label, color, count, active, onClick }) {
         display: "flex",
         gap: "4px",
         alignItems: "center",
-        background: active ? "rgba(255,255,255,0.04)" : "transparent",
+        background: active ? "rgba(255,255,255,0.06)" : "transparent",
         border: `1px solid ${color}33`,
         borderRadius: "999px",
-        padding: "2px 10px 2px 6px",
+        padding: "2px 8px 2px 4px",
         cursor: "pointer",
         fontSize: "10px",
-        color: "#fff",
+        color: "#ccc",
+        transition: "all 0.1s"
       }}
     >
-      <span
-        style={{
-          width: "8px",
-          height: "8px",
-          borderRadius: "999px",
-          background: color,
-        }}
-      />
+      <span style={{ width: "6px", height: "6px", borderRadius: "999px", background: color }} />
       <span>{label}</span>
-      <span style={{ opacity: 0.6 }}>{count}</span>
+      <span style={{ opacity: 0.5, marginLeft: "2px" }}>{count}</span>
     </button>
   );
 }
 
-function InspectorContent({
-  mode,
-  anchoredBeats,
-  offBeats,
-  missingBeats,
-  onSelectScene,
-}) {
+function InspectorContent({ mode, anchoredBeats, offBeats, missingBeats, onSelectScene }) {
   if (mode === "anchored") {
     return (
       <>
-        <div style={{ fontSize: "10px", opacity: 0.6, marginBottom: "4px" }}>
-          Beats you’ve actually placed.
-        </div>
-        {anchoredBeats.length === 0 ? (
-          <div style={{ fontSize: "10px", opacity: 0.4 }}>
-            Drag a beat onto a scene or set a beat on the scene.
-          </div>
-        ) : (
-          anchoredBeats.map((b) => (
-            <InspectorRow
-              key={b.id}
-              title={b.label}
-              subtitle={b.sceneTitle}
-              pct={b.pct}
-              onClick={() => b.sceneId && onSelectScene(b.sceneId)}
-              aiHint={`This lines up for ${b.label}. You can deepen it with a reaction or a consequence beat.`}
-            />
-          ))
-        )}
+        <div style={{ fontSize: "10px", opacity: 0.6, marginBottom: "4px" }}>Beats you have placed</div>
+        {anchoredBeats.length === 0 ? <div style={{fontSize:"10px", opacity:0.3}}>(none)</div> : anchoredBeats.map(b => (
+             <InspectorRow key={b.id} title={b.label} subtitle={b.sceneTitle} pct={b.pct} onClick={() => onSelectScene(b.sceneId)} />
+        ))}
       </>
     );
   }
-
   if (mode === "off") {
     return (
       <>
-        <div style={{ fontSize: "10px", opacity: 0.6, marginBottom: "4px" }}>
-          Tagged but not lining up — pad before it, or move the scene later.
-        </div>
-        {offBeats.length === 0 ? (
-          <div style={{ fontSize: "10px", opacity: 0.4 }}>
-            Looks good — no big drifts.
-          </div>
-        ) : (
-          offBeats.map((b) => (
-            <InspectorRow
-              key={b.id}
-              title={b.label}
-              subtitle={b.sceneTitle}
-              pct={b.pct}
-              onClick={() => b.sceneId && onSelectScene(b.sceneId)}
-              aiHint={`This is about ${Math.round(
-                b.diff
-              )}% off. Add a short scene before it or reassign to the later scene where the turn actually happens.`}
-              color="#ffbb3d"
-            />
-          ))
-        )}
+        <div style={{ fontSize: "10px", opacity: 0.6, marginBottom: "4px" }}>Drifting beats (&gt;5% off)</div>
+        {offBeats.length === 0 ? <div style={{fontSize:"10px", opacity:0.3}}>Everything looks tight!</div> : offBeats.map(b => (
+             <InspectorRow key={b.id} title={b.label} subtitle={b.sceneTitle} pct={b.pct} onClick={() => onSelectScene(b.sceneId)} aiHint={`Off by ${Math.round(b.diff)}%`} color="#ffbb3d" />
+        ))}
       </>
     );
   }
-
-  // missing
   return (
     <>
-      <div style={{ fontSize: "10px", opacity: 0.6, marginBottom: "4px" }}>
-        Template beats you haven’t placed yet.
-      </div>
-      {missingBeats.length === 0 ? (
-        <div style={{ fontSize: "10px", opacity: 0.4 }}>
-          All beats placed. You show-off.
-        </div>
-      ) : (
-        missingBeats.map((b) => (
-          <InspectorRow
-            key={b.id}
-            title={b.label}
-            subtitle="— not placed —"
-            pct={b.pct}
-            aiHint={`This usually lands around ${b.pct}%. Find the moment where the story shifts in that way and tag that scene.`}
-            color="#ff4e4e"
-          />
-        ))
-      )}
+      <div style={{ fontSize: "10px", opacity: 0.6, marginBottom: "4px" }}>Missing beats</div>
+      {missingBeats.length === 0 ? <div style={{fontSize:"10px", opacity:0.3}}>All done!</div> : missingBeats.map(b => (
+           <InspectorRow key={b.id} title={b.label} subtitle="Not assigned" pct={b.pct} color="#ff4e4e" />
+      ))}
     </>
   );
 }
 
 function InspectorRow({ title, subtitle, pct, onClick, aiHint, color = "#fff" }) {
   return (
-    <div
-      onClick={onClick}
-      style={{
-        borderBottom: "1px solid rgba(255,255,255,0.03)",
-        padding: "4px 0",
-        cursor: onClick ? "pointer" : "default",
-      }}
-    >
-      <div style={{ fontSize: "10.5px" }}>{title}</div>
-      <div style={{ fontSize: "9px", opacity: 0.5 }}>
-        {subtitle} {pct != null ? `• ${pct}%` : ""}
+    <div onClick={onClick} style={{ borderBottom: "1px solid #222", padding: "6px 0", cursor: onClick ? "pointer" : "default" }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+         <span style={{ fontSize: "11px", color }}>{title}</span>
+         <span style={{ fontSize: "10px", opacity: 0.5 }}>{pct}%</span>
       </div>
-      {aiHint ? (
-        <div
-          style={{
-            fontSize: "9px",
-            opacity: 0.35,
-            marginTop: "2px",
-            color,
-          }}
-        >
-          {aiHint}
-        </div>
-      ) : null}
+      <div style={{ fontSize: "10px", opacity: 0.5 }}>{subtitle}</div>
+      {aiHint && <div style={{fontSize:"9px", color:"#d88", marginTop:"2px"}}>{aiHint}</div>}
     </div>
   );
 }
 
 function getBeatColor(mapped) {
-  if (!mapped.hasExplicit) return "rgba(255,78,78,0.8)";
-  if (mapped.status === "scene") return "rgba(0,219,255,1)";
-  if (mapped.status === "off") return "rgba(255,187,61,1)";
-  return "rgba(255,255,255,0.3)";
+  if (!mapped.hasExplicit) return "#ff4e4e";
+  if (mapped.status === "scene") return "#00dfff";
+  if (mapped.status === "off") return "#ffbb3d";
+  return "#555";
 }

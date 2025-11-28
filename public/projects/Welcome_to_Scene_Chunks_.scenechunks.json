@@ -1,0 +1,92 @@
+{
+  "project": {
+    "id": "proj_demo",
+    "title": "Welcome to Scene Chunks!",
+    "logline": "A quick tour of the interface.",
+    "settings": {
+      "activeScriptId": "script_main",
+      "activeSkinId": "DEFAULT"
+    },
+    "meta": {
+      "author": "",
+      "email": "",
+      "company": "",
+      "draftDate": "2025-11-21"
+    },
+    "chunks": [
+      "chunk_welcome"
+    ],
+    "scripts": [
+      "script_main"
+    ]
+  },
+  "chunksById": {
+    "chunk_welcome": {
+      "id": "chunk_welcome",
+      "title": "INT. SCENE CHUNKS - DAY",
+      "body": [
+        {
+          "type": "action",
+          "text": "Welcome! This is a sample scene chunk.\n        \nScene Chunks lets you build your screenplay as modular pieces (“chunks”). \nEach chunk contains action, dialogue, transitions, and tags you can rearrange at any time.",
+          "id": "blk_mi9gffxj_1"
+        },
+        {
+          "id": "blk_mi9gffxj_2",
+          "type": "dualDialogue",
+          "left": {
+            "character": "GIRL",
+            "parenthetical": "",
+            "dialogue": "• The sidebar lists all your scenes  \n \n• The bottom bar shows your script structure  \n\n• The Writer button will remove distractions and let you get in the zone"
+          },
+          "right": {
+            "character": "BOY",
+            "parenthetical": "",
+            "dialogue": "\n• The editor shows the selected scene \n\n• Panels on the side handle Characters, Props, & Crew\n\n• And when you're ready to see your masterpiece, click the Preview Button. "
+          },
+          "status": "draft"
+        },
+        {
+          "type": "action",
+          "text": "👉 When you're ready, delete this chunk or click **BLANK PROJECT** to start fresh.",
+          "id": "blk_mi9gffxj_3"
+        },
+        {
+          "id": "blk_mi9gi4y8_4",
+          "type": "dialogueBlock",
+          "character": "Narrator V/O",
+          "parenthetical": "",
+          "dialogue": "This demo chunk exists only to show the interface. Feel free to delete it.",
+          "status": "draft"
+        }
+      ],
+      "characters": [],
+      "props": [
+        "BLANK PROJECT"
+      ],
+      "emotionalBeat": "",
+      "status": "info",
+      "tags": [
+        "Welcome"
+      ],
+      "estPageLength": 0.3,
+      "notes": "",
+      "anchorRole": null,
+      "locked": false
+    }
+  },
+  "scriptsById": {
+    "script_main": {
+      "id": "script_main",
+      "name": "Main Draft",
+      "chunkOrder": [
+        "chunk_welcome"
+      ],
+      "structureTemplate": null,
+      "anchors": []
+    }
+  },
+  "selectedChunkId": "chunk_welcome",
+  "deletedScenes": [],
+  "version": "scene-chunks-v1",
+  "savedAt": "2025-11-21T22:57:47.330Z"
+}
