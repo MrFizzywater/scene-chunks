@@ -9,7 +9,7 @@
     "build:web": "set TAILWIND_DISABLE_OXIDE=1&& next build",
     "start:web": "next start -p 3678",
     "electron": "set NODE_ENV=development&& electron .",
-    "build": "npm run build:web",
+    "build": "next build",
     "dist:mac": "npm run build:web && CSC_IDENTITY_AUTO=false electron-builder --mac",
     "dist:win": "npm run build:web && set ELECTRON_BUILDER_DISABLE_REBUILD=1&& electron-builder --win",
     "lint": "eslint"
