@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+out
+.git
+.gitignore
+README.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
