@@ -8,7 +8,7 @@
     "dev": "next dev",
     "build:web": "set TAILWIND_DISABLE_OXIDE=1&& next build",
     "start:web": "next start -p 3000",
-    "start": "next start -p 3678",
+    "start": "next start -H 0.0.0.0 -p $PORT",
     "electron": "set NODE_ENV=development&& electron .",
     "build": "next build",
     "dist:mac": "npm run build:web && CSC_IDENTITY_AUTO=false electron-builder --mac",
