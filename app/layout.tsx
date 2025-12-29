@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Screen Chunks",
+  title: "Scene Chunks",
   description: "A screenplay writing app for scatterbrained creatives",
 };
 
