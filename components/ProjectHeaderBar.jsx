@@ -222,13 +222,16 @@ export default function ProjectHeaderBar() {
             accept=".txt,.md,.rtf,.fountain"
             style={{ display: "none" }}
             onChange={handleTextFileSelected}
-          />
+          /></div>
+          <div style={{ width: "1px", height: "20px", background: "#444", margin: "0 4px" }} />
+        
+            <LogoutButton buttonStyle={headerBtnStyle("#ff4d4d")} />
 
-          <LogoutButton />
+          </div>
 
 
-        </div>
-      </div>
+        
+    
 
       {/* SETTINGS PANEL */}
       {showSettings && (
