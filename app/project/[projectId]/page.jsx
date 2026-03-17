@@ -1,105 +1,38 @@
 // app/project/[projectId]/page.jsx
-"use client";
+// NO "use client" here. This is a Server Component.
 
-import React, { useState } from "react";
-import { ProjectProvider } from "../../../context/ProjectContext";
+import { auth, signIn } from "../../../auth"
+import ProjectEditor from "./ProjectEditor" // We will create this next
 
-import ProjectHeaderBar from "../../../components/ProjectHeaderBar";
-import ChunkListSidebar from "../../../components/ChunkListSidebar";
-import ChunkEditor from "../../../components/ChunkEditor";
-import ChunkDetailsPanel from "../../../components/ChunkDetailsPanel";
-import BottomBar from "../../../components/BottomBar";
-import ScriptPreviewModal from "../../../components/ScriptPreviewModal";
-import ImportTextWizard from "../../../components/ImportTextWizard";
+export default async function ProjectPage({ params }) {
+  // 1. Ask the bouncer who is at the door
+  const session = await auth()
 
-const HEADER_HEIGHT = 48;
-const FOOTER_HEIGHT = 48;
-
-export default function ProjectPage() {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const openPreview = () => setIsPreviewOpen(true);
-  const closePreview = () => setIsPreviewOpen(false);
-
-  return (
-    <ProjectProvider>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          background: "#000",
-          color: "#fff",
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        {/* Header */}
-        <div style={{ height: HEADER_HEIGHT }}>
-          <ProjectHeaderBar />
-        </div>
-        <ImportTextWizard />
-
-        {/* Main content row */}
-        <div
-          style={{
-            display: "flex",
-            height: "100vh",
-            minHeight: 0,
-            borderTop: "1px solid #444",
-            borderBottom: "1px solid #444",
-            overflow: "hidden",
-          }}
-        >
-          {/* LEFT SIDEBAR */}
-          <div
-            style={{
-              position: "sticky",
-              top: HEADER_HEIGHT,
-              height: "100vh",
-              flexShrink: 0,
-              zIndex: 10,
+  // 2. THE WALL: If they aren't logged in, serve them a splash screen
+  if (!session?.user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-900 text-zinc-100">
+        <div className="text-center space-y-6">
+          <h1 className="text-5xl font-bold tracking-tighter">Scene Chunks</h1>
+          <p className="text-zinc-400">Modular screenwriting. Log in to access the editor.</p>
+          <form
+            action={async () => {
+              "use server"
+              await signIn("github")
             }}
           >
-            {/* no firebase props needed anymore */}
-            <ChunkListSidebar />
-          </div>
-
-          {/* MAIN EDITOR */}
-          <div
-            style={{
-              flex: 1,
-              minWidth: 0,
-              overflowY: "auto",
-              background: "#0b0b0b",
-            }}
-          >
-            <ChunkEditor />
-          </div>
-
-          {/* RIGHT DETAILS PANEL */}
-          <div
-            style={{
-              position: "sticky",
-              top: HEADER_HEIGHT,
-              height: `calc(100vh - ${HEADER_HEIGHT}px - ${FOOTER_HEIGHT}px)`,
-              width: "320px",
-              flexShrink: 0,
-              background: "#0a0a0a",
-              borderLeft: "1px solid #333",
-              overflowY: "auto",
-              zIndex: 10,
-            }}
-          >
-            <ChunkDetailsPanel />
-          </div>
+            <button 
+              type="submit"
+              className="px-6 py-3 bg-white text-black font-bold rounded hover:bg-zinc-200 transition-colors"
+            >
+              Log in with GitHub
+            </button>
+          </form>
         </div>
-
-        {/* Bottom bar */}
-        <div style={{ height: FOOTER_HEIGHT }}>
-          <BottomBar onOpenPreview={openPreview} />
-        </div>
-
-        <ScriptPreviewModal isOpen={isPreviewOpen} onClose={closePreview} />
       </div>
-    </ProjectProvider>
-  );
+    )
+  }
+
+  // 3. THE APP: They passed the check. Pass the projectId to the client component.
+  return <ProjectEditor projectId={params.projectId} />
 }
