@@ -5,20 +5,6 @@ import { useProject } from "../context/ProjectContext";
 // Inside your ProjectHeaderBar.jsx or similar file
 import LogoutButton from "./LogoutButton";
 
-export default function ProjectHeaderBar() {
-  return (
-    <div className="flex items-center justify-between px-4 h-full bg-zinc-900 border-b border-zinc-800">
-      <div className="font-bold text-lg tracking-tight text-zinc-100">
-        🎬 Scene Chunks
-      </div>
-      
-      <div>
-        {/* Drop the eject seat right in the top right corner */}
-        <LogoutButton />
-      </div>
-    </div>
-  );
-}
 
 export default function ProjectHeaderBar() {
   const {
@@ -237,6 +223,8 @@ export default function ProjectHeaderBar() {
             style={{ display: "none" }}
             onChange={handleTextFileSelected}
           />
+
+          <LogoutButton />
 
 
         </div>
