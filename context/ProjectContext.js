@@ -209,6 +209,17 @@ useEffect(() => {
 // -----------------------------------------------------------
 // --- helper: split a screenplay-style scene heading into parts ---
 
+function normalizeCharNameForMatch(name) {
+  if (typeof name !== "string") return "";
+  let n = name.trim();
+  n = n.replace(/\s*\([^)]*\)\s*$/i, ""); // strip trailing "(CONT'D)" etc
+  return n.toUpperCase();
+}
+
+function normalizePropNameForMatch(name) {
+  if (typeof name !== "string") return "";
+  return name.trim().toUpperCase();
+}
 
 
 function parseSceneHeadingLine(line) {
@@ -1099,6 +1110,131 @@ const createNewProject = React.useCallback(() => {
 
 const [importWizardOpen, setImportWizardOpen] = useState(false);
 const [importWizardText, setImportWizardText] = useState("");
+const renameCharacterEverywhere = useCallback((oldName, newName) => {
+  const oldNorm = normalizeCharNameForMatch(oldName);
+  const nextName = (newName || "").trim();
+  if (!oldNorm || !nextName) return;
+
+  setSaveStatus("saving");
+
+  // update chunk content
+  setChunksById((prev) => {
+    let anyChanged = false;
+    const nextAll = { ...prev };
+
+    for (const [cid, chunk] of Object.entries(prev)) {
+      if (!chunk) continue;
+
+      let changed = false;
+      const nextChunk = { ...chunk };
+
+      // chunk.characters
+      if (Array.isArray(nextChunk.characters)) {
+        const updated = nextChunk.characters.map((n) =>
+          normalizeCharNameForMatch(n) === oldNorm ? nextName : n
+        );
+        if (updated.some((v, i) => v !== nextChunk.characters[i])) {
+          nextChunk.characters = updated;
+          changed = true;
+        }
+      }
+
+      // dialogue speakers
+      if (Array.isArray(nextChunk.body)) {
+        const updatedBody = nextChunk.body.map((b) => {
+          if (!b) return b;
+
+          if (b.type === "dialogueBlock" && b.character) {
+            if (normalizeCharNameForMatch(b.character) === oldNorm) {
+              return { ...b, character: nextName };
+            }
+            return b;
+          }
+
+          if (b.type === "dualDialogue") {
+            let left = b.left;
+            let right = b.right;
+            let bChanged = false;
+
+            if (left?.character && normalizeCharNameForMatch(left.character) === oldNorm) {
+              left = { ...left, character: nextName };
+              bChanged = true;
+            }
+            if (right?.character && normalizeCharNameForMatch(right.character) === oldNorm) {
+              right = { ...right, character: nextName };
+              bChanged = true;
+            }
+
+            return bChanged ? { ...b, left, right } : b;
+          }
+
+          return b;
+        });
+
+        if (updatedBody.some((v, i) => v !== nextChunk.body[i])) {
+          nextChunk.body = updatedBody;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        nextAll[cid] = nextChunk;
+        anyChanged = true;
+      }
+    }
+
+    return anyChanged ? nextAll : prev;
+  });
+
+  // keep panel selection in sync if it was opened by name
+  setUiState((prev) => {
+    if (!prev?.selectedCharacterName) return prev;
+    return normalizeCharNameForMatch(prev.selectedCharacterName) === oldNorm
+      ? { ...prev, selectedCharacterName: nextName }
+      : prev;
+  });
+
+  setTimeout(() => setSaveStatus("saved"), 250);
+}, []);
+
+const renamePropEverywhere = useCallback((oldName, newName) => {
+  const oldNorm = normalizePropNameForMatch(oldName);
+  const nextName = (newName || "").trim();
+  if (!oldNorm || !nextName) return;
+
+  setSaveStatus("saving");
+
+  setChunksById((prev) => {
+    let anyChanged = false;
+    const nextAll = { ...prev };
+
+    for (const [cid, chunk] of Object.entries(prev)) {
+      if (!chunk) continue;
+      if (!Array.isArray(chunk.props)) continue;
+
+      const updated = chunk.props.map((p) =>
+        normalizePropNameForMatch(p) === oldNorm ? nextName : p
+      );
+
+      if (updated.some((v, i) => v !== chunk.props[i])) {
+        nextAll[cid] = { ...chunk, props: updated };
+        anyChanged = true;
+      }
+    }
+
+    return anyChanged ? nextAll : prev;
+  });
+
+  setUiState((prev) => {
+    if (!prev?.selectedPropName) return prev;
+    return normalizePropNameForMatch(prev.selectedPropName) === oldNorm
+      ? { ...prev, selectedPropName: nextName }
+      : prev;
+  });
+
+  setTimeout(() => setSaveStatus("saved"), 250);
+}, []);
+
 
 const loadDemoProject = React.useCallback(() => {
   const demoId = "demo_" + Math.random().toString(36).slice(2, 5);
@@ -1290,6 +1426,9 @@ const importProjectFromFile = React.useCallback((text) => {
       closeCrewPanel,
       openPropsPanel,
       closePropsPanel,
+      renameCharacterEverywhere,
+      renamePropEverywhere,
+
 
       // scene actions
       selectChunk,
@@ -1336,6 +1475,9 @@ const importProjectFromFile = React.useCallback((text) => {
       openPropsPanel,
       closePropsPanel,
       importFromText,
+      renameCharacterEverywhere,
+      renamePropEverywhere,
+
       importWizardOpen,
       importWizardText,
       closeImportWizard,

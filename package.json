@@ -19,8 +19,10 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@supabase/supabase-js": "^2.95.3",
     "firebase": "^12.5.0",
     "next": "16.0.1",
+    "next-auth": "^5.0.0-beta.30",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
@@ -65,10 +67,8 @@
     },
     "nsis": {
       "oneClick": true,
-      "runAfterFinish": false,        
+      "runAfterFinish": false,
       "allowToChangeInstallationDirectory": false
     }
   }
-
-
 }
